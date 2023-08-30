@@ -23,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Obtaining config from configuration.yaml
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    { vol.Required(const.CONF_ID_PORTO): cv.string,}
+    { vol.Required(const.CONF_ID_PORT): cv.string,}
     
 )
 
@@ -146,7 +146,7 @@ class MeteoGaliciaForecastTide(
                             minute = int(dt.now().strftime("%M"))
                             hourTide = marea.get("@hora").split(":")[0]
                             minuteTide = marea.get("@hora").split(":")[1]
-                            if (hour >= int(hourTide)) and (minute >=int(minuteTide)):
+                            if (hour > int(hourTide)) or (hour == int(hourTide) and (minute >=int(minuteTide))):
                                 if marea.get("@idTipoMarea") == 1:
                                  state = "down"
                                 else:

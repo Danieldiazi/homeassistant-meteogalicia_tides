@@ -1,0 +1,17 @@
+{
+  "domain": "meteogalicia_tides",
+  "name": "MeteoGalicia_Tides",
+  "codeowners": [
+    "@danieldiazi"
+  ],
+  "config_flow": false,
+  "dependencies": [],
+  "documentation": "https://github.com/Danieldiazi/homeassistant-meteogalicia_tides",
+  "homekit": {},
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Danieldiazi/homeassistant-meteogalicia_tides/issues",
+  "requirements": ["MeteoGalicia-API==0.1.0"],
+  "ssdp": [],
+  "version": "2023.8",
+  "zeroconf": []
+}

@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download repo
+        uses: actions/checkout@v3
+
+      - name: Create token_extractor.zip
+        run: |
+          zip homeassistant-meteogalicia_tides.zip -r ./custom_components/meteogalicia_tides/
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: homeassistant-meteogalicia_tides.zip
+          asset_name: homeassistant-meteogalicia_tides.zip
+          tag: ${{ github.ref }}
+          overwrite: true

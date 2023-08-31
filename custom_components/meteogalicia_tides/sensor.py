@@ -40,7 +40,7 @@ async def async_setup_platform(
         id_port = config[const.CONF_ID_PORT]
         if not id_port.isnumeric():
                     _LOGGER.critical(
-                    "Configured (YAML) 'id_porto '%s' is not valid", id_port
+                    "Configured (YAML) 'id_port '%s' is not valid", id_port
                     )
                     return False
         else:
@@ -133,11 +133,12 @@ class MeteoGaliciaForecastTide(
                         }
                         listaMareas = item.get("Mareas:mareas")
                         
-                        if item.get("Mareas:mareas")[0] ==1:
+                        if int(item.get("Mareas:mareas")[0]['@idTipoMarea']) ==1:
                             state = "up"
                         else:
                             state ="down" 
 
+                        
                         for marea in listaMareas:
                             self._attr["marea_"+marea.get("@id")+"_estado"] = marea.get("@estado")
                             self._attr["marea_"+marea.get("@id")+"_hora"] = marea.get("@hora")
@@ -147,10 +148,12 @@ class MeteoGaliciaForecastTide(
                             hourTide = marea.get("@hora").split(":")[0]
                             minuteTide = marea.get("@hora").split(":")[1]
                             if (hour > int(hourTide)) or (hour == int(hourTide) and (minute >=int(minuteTide))):
-                                if marea.get("@idTipoMarea") == 1:
+                                if int(marea.get("@idTipoMarea")) == 1:
                                  state = "down"
                                 else:
                                     state ="up"
+                                
+                        
 
                         self._state = state
                         

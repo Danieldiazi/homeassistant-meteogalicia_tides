@@ -201,7 +201,7 @@ class MeteoGaliciaForecastTide(
     @property
     def icon(self):
         """Return icon."""
-        return "mdi:thermometer"
+        return "mdi:waves"
 
     @property
     def extra_state_attributes(self):

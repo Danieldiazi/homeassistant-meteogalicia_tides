@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v1
 
-      - name: Create token_extractor.zip
+      - name: Create file
         run: |
           zip homeassistant-meteogalicia_tides.zip -r ./custom_components/meteogalicia_tides/
       - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@v1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: homeassistant-meteogalicia_tides.zip

@@ -1,5 +1,5 @@
-[![HACS](https://img.shields.io/badge/HACS-Default-orange.svg)](https://hacs.xyz)
-![GitHub Activity](https://img.shields.io/github/commit-activity/m/danieldiazi/homeassistant-meteogalicia-tides?label=commits)
+[![HACS Supported](https://img.shields.io/badge/HACS-Supported-green.svg)](https://github.com/custom-components/hacs)
+![GitHub Activity](https://img.shields.io/github/commit-activity/m/danieldiazi/homeassistant-meteogalicia_tides?label=commits)
 ![GitHub Release](https://img.shields.io/github/v/release/danieldiazi/homeassistant-meteogalicia_tides)
 
 **configuration.yaml:**

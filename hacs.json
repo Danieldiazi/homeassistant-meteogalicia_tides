@@ -1,5 +1,7 @@
 {
   "name": "MeteoGalicia_Tides",
-  "country": "ES"
+  "country": "ES",
+  "zip_release": true,
+  "filename": "homeassistant-meteogalicia_tides.zip"
 
 }

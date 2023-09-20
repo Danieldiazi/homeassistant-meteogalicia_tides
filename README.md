@@ -15,7 +15,7 @@ Proporciona los siguientes sensores:
 
 - Para un puerto dado
   - Pronósticos:
-    - Indica cuando será la siguiente marea baja o alta.
+    - Indica cuando será la siguiente marea. (Con información adicional en los atributos del sensor)
       
     
 

@@ -29,7 +29,7 @@ sensor:
 key | description  
 :--- | :---  
 **platform (Required)** | The platform name: "meteogalicia_tides".  
-**id_port (Required)** | The ID port by MeteoGalicia.  
+**id_port (Required)** | The ID port by MeteoGalicia.  List available at: https://www.meteogalicia.gal/datosred/infoweb/meteo/docs/rss/RSS_Mareas_gl.pdf
 **scan_interval (Optional)** | Interval in seconds to poll new data from meteogalicia webservice. 
   
    

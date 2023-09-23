@@ -15,9 +15,7 @@ Proporciona los siguientes sensores:
 
 - Para un puerto dado
   - Pronósticos:
-    - Para el día actual
-      - Preamar
-      - Bajamar
+    - Indica cuando será la siguiente marea baja o alta.
       
     
 

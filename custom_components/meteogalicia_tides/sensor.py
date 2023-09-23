@@ -22,6 +22,7 @@ from meteogalicia_api.interface import MeteoGalicia
 _LOGGER = logging.getLogger(__name__)
 
 ATTRIBUTION = "Data provided by MeteoGalicia"
+
 # Obtaining config from configuration.yaml
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     { vol.Required(const.CONF_ID_PORT): cv.string,}

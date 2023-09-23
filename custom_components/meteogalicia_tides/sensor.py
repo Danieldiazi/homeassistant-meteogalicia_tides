@@ -156,6 +156,7 @@ class MeteoGaliciaForecastTide(
 
                         self._attr["state"] = marea.get("@estado")
                         self._attr["height"] = marea.get("@altura")   
+                        self._attr["hour"] = marea.get("@hora")   
                         if int(marea.get("@idTipoMarea")) == 0:
                             state = "Low tide at " + marea.get("@hora")
                         else:

@@ -16,7 +16,7 @@ jobs:
         run: |
           zip homeassistant-meteogalicia_tides.zip -r ./custom_components/meteogalicia_tides/
       - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v1
+        uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: homeassistant-meteogalicia_tides.zip

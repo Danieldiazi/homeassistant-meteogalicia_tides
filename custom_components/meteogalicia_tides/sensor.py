@@ -46,7 +46,7 @@ async def async_setup_platform(
         else:
             try:
                 async with async_timeout.timeout(const.TIMEOUT):
-                    response = await get_forecast_tide_data(hass, id_port)
+                    await get_forecast_tide_data(hass, id_port)
             except Exception as exception:
                 _LOGGER.warning("[%s] %s", sys.exc_info()
                                 [0].__name__, exception)
@@ -129,21 +129,7 @@ class MeteoGaliciaForecastTide(
                         }
                         lista_mareas = item.get("todayTides")
 
-                        id_next_tide = 0
-
-                        for marea in lista_mareas:
-
-                            hour = int(dt.now().strftime("%H"))
-                            minute = int(dt.now().strftime("%M"))
-                            hour_tide = marea.get(const.HORA_FIELD).split(":")[0]
-                            minute_tide = marea.get(const.HORA_FIELD).split(":")[1]
-                            if (hour > int(hour_tide)) or (hour == int(hour_tide) and (minute >= int(minute_tide))):
-                                id_next_tide = int(marea.get("@id")) + 1
-
-                        if (id_next_tide >= len(lista_mareas)):
-                            marea = item.get("tomorrowFirstTide")
-                        else:
-                            marea = lista_mareas[id_next_tide]
+                        marea = getNextTide (lista_mareas,item.get("tomorrowFirstTide") )
 
                         self._attr["state"] = marea.get("@estado")
                         self._attr["height"] = marea.get("@altura")
@@ -208,3 +194,25 @@ class MeteoGaliciaForecastTide(
     def native_value(self):
         """Return the state of the sensor."""
         return self._state
+
+
+def getNextTide(lista_mareas, tomorrow_next_tide):
+
+    marea = None
+
+    id_next_tide = 0
+
+    for marea in lista_mareas:
+
+        hour = int(dt.now().strftime("%H"))
+        minute = int(dt.now().strftime("%M"))
+        hour_tide = marea.get(const.HORA_FIELD).split(":")[0]
+        minute_tide = marea.get(const.HORA_FIELD).split(":")[1]
+        if (hour > int(hour_tide)) or (hour == int(hour_tide) and (minute >= int(minute_tide))):
+            id_next_tide = int(marea.get("@id")) + 1
+
+    if (id_next_tide >= len(lista_mareas)):
+        marea = tomorrow_next_tide
+    else:
+        marea = lista_mareas[id_next_tide]
+    return marea

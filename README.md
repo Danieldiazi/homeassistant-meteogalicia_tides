@@ -1,7 +1,7 @@
 # homeassistant-meteogalicia_tides
 [![HACS Supported](https://img.shields.io/badge/HACS-Supported-green.svg)](https://github.com/custom-components/hacs)
 ![GitHub Activity](https://img.shields.io/github/commit-activity/m/danieldiazi/homeassistant-meteogalicia_tides?label=commits)
-
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Danieldiazi_homeassistant-meteogalicia_tides&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Danieldiazi_homeassistant-meteogalicia_tides)
 
 # homeassistant-meteogalicia_tides
 MeteoGalicia Tides - Home Assistant Integration 

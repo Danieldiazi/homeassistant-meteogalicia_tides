@@ -3,7 +3,7 @@
 ![GitHub Activity](https://img.shields.io/github/commit-activity/m/danieldiazi/homeassistant-meteogalicia_tides?label=commits)
 
 
-# homeassistant-meteogalicia_Tides
+# homeassistant-meteogalicia_tides
 MeteoGalicia Tides - Home Assistant Integration 
 
 Esta integración para [Home Assistant](https://www.home-assistant.io/) te permite obtener información de mareas de aquellos puertos de Galicia que sean de tu interés. La información se obtiene de los servicios webs proporcionados por [MeteoGalicia](https://www.meteogalicia.gal/), organismo oficial que tiene entre otros objetivos la predicción meteorológica de Galicia.

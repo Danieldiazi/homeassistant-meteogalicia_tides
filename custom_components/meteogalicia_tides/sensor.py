@@ -144,7 +144,6 @@ class MeteoGaliciaForecastTide(
                             
                             hour = int(dt.now().strftime("%H"))
                             minute = int(dt.now().strftime("%M"))
-                            hour = int ("06")
                             hourTide = marea.get("@hora").split(":")[0]
                             minuteTide = marea.get("@hora").split(":")[1]
                             if (hour > int(hourTide)) or (hour == int(hourTide) and (minute >=int(minuteTide))):

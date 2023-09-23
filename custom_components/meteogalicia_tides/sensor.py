@@ -112,8 +112,6 @@ class MeteoGaliciaForecastTide(
                         response.status,
                     )
                 else:
-
-                    # _LOGGER.info("Test '%s' : '%s'",   self.id, data.get("predConcello")["listaPredDiaConcello"],     )
                     if response.get("pointGeoRSS") is not None:
                         item = response
                         state = "down"
@@ -129,7 +127,7 @@ class MeteoGaliciaForecastTide(
                         }
                         lista_mareas = item.get("todayTides")
 
-                        marea = getNextTide (lista_mareas,item.get("tomorrowFirstTide") )
+                        marea = get_next_tide (lista_mareas,item.get("tomorrowFirstTide") )
 
                         self._attr["state"] = marea.get("@estado")
                         self._attr["height"] = marea.get("@altura")
@@ -196,7 +194,7 @@ class MeteoGaliciaForecastTide(
         return self._state
 
 
-def getNextTide(lista_mareas, tomorrow_next_tide):
+def get_next_tide(lista_mareas, tomorrow_next_tide):
 
     marea = None
 

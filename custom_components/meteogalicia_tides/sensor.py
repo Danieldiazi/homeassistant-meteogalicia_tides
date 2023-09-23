@@ -61,11 +61,7 @@ async def async_setup_platform(
                 )
             _LOGGER.info("Added tide forecast sensor for port with id '%s'",  id_port)
 
-async def get_observation_data(hass, idc):
-    """Poll weather data from MeteoGalicia API."""
 
-    data = await hass.async_add_executor_job(_get_observation_data_from_api, idc)
-    return data
 
 
 
@@ -105,8 +101,11 @@ class MeteoGaliciaForecastTide(
         information = []
         connected = False
         try:
+            self._name = self.id
             async with async_timeout.timeout(const.TIMEOUT):
+                
                 response = await get_forecast_tide_data(self.hass, self.id)
+                
                 if response is None:
                     self._state = None
                     _LOGGER.warning(
@@ -115,25 +114,27 @@ class MeteoGaliciaForecastTide(
                         response.status,
                     )
                 else:
-
+                    
                     # _LOGGER.info("Test '%s' : '%s'",   self.id, data.get("predConcello")["listaPredDiaConcello"],     )
-                    if response.get("rss") is not None:
-                        item = response.get("rss")["channel"]["item"]
-                        state = "down" #item.get(self.forecast_field, "null") #Our state is based on forecast_field value
-                        self._name = item.get("Mareas:nomePorto")["#text"]
+                    if response.get("pointGeoRSS") is not None:
+                        item = response
+                        state = "down" 
+                        
+                        
+                        self._name = item.get("portName")
 
                         
 
                         self._attr = {
                             "information": information,
                             "integration": "meteogalicia_tides",
-                            "title": item.get("Mareas:nomePorto")["#text"],
-                            "date": item.get("Mareas:dataPredicion")["#text"],
+                            "title": item.get("portName"),
+                            "date": item.get("date"),
                             "id": self.id,
                         }
-                        listaMareas = item.get("Mareas:mareas")
+                        listaMareas = item.get("todayTides")
                         
-                        if int(item.get("Mareas:mareas")[0]['@idTipoMarea']) ==1:
+                        if int(item.get("todayTides")[0]['@idTipoMarea']) ==1:
                             state = "up"
                         else:
                             state ="down" 
@@ -159,7 +160,7 @@ class MeteoGaliciaForecastTide(
                         
 
         except Exception:  # pylint: disable=broad-except
-            self.exception = sys.exc_info()[0].__name__
+            self.exception = sys.exc_info() #[0].__name__
             connected = False
         else:
             connected = True
@@ -188,13 +189,12 @@ class MeteoGaliciaForecastTide(
     @property
     def name(self) -> str:
         """Return the name."""
-        return f"{self._name} - Forecast - {self.id} "
+        return f"{self._name} - Forecast Tides"
 
     @property
     def unique_id(self) -> str:
         """Return a unique ID to use for this sensor."""
-
-        return f"{const.INTEGRATION_NAME.lower()}_forecast_{self.id}".replace(
+        return f"{const.INTEGRATION_NAME.lower()}_forecast_tides_id_{self.id}".replace(
             ",", ""
         )
 

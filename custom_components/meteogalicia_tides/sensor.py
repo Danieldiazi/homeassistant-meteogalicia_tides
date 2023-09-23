@@ -114,7 +114,7 @@ class MeteoGaliciaForecastTide(
                 else:
                     if response.get("pointGeoRSS") is not None:
                         item = response
-                        state = "down"
+                        state = ""
 
                         self._name = item.get("portName")
 
@@ -132,10 +132,8 @@ class MeteoGaliciaForecastTide(
                         self._attr["state"] = marea.get("@estado")
                         self._attr["height"] = marea.get("@altura")
                         self._attr["hour"] = marea.get(const.HORA_FIELD)
-                        if int(marea.get("@idTipoMarea")) == 0:
-                            state = "Low tide at " + marea.get(const.HORA_FIELD)
-                        else:
-                            state = "High tide at " + marea.get(const.HORA_FIELD)
+
+                        state = get_state_from_tide(marea)
 
                         self._state = state
 
@@ -214,3 +212,13 @@ def get_next_tide(lista_mareas, tomorrow_next_tide):
     else:
         marea = lista_mareas[id_next_tide]
     return marea
+
+def get_state_from_tide(marea):
+    state = ""
+    if int(marea.get("@idTipoMarea")) == 0:
+        state = f"Low tide at {marea.get(const.HORA_FIELD)}"
+    else:
+        state = f"High tide at {marea.get(const.HORA_FIELD)}"
+    return state
+
+    

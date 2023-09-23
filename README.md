@@ -1,0 +1,1 @@
+# homeassistant-meteogalicia_tides

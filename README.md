@@ -32,8 +32,8 @@ Para instalar esta integración en Home Assistant necesitarás:
 ## Instalación
 Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalación de esta integración son los siguientes:
 
-1. Pulsa en [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=danieldiazi&repository=homeassistant-meteogalicia&category=integration)
-  
+1. Añadir este repositorio (https://github.com/Danieldiazi/homeassistant-meteogalicia_tides) a los repositorios personalizados de HACS,
+
 2. Instalar la integración mediante HACS. [Más info](docs/HACS_add_integration.md)
 
 3. Reiniciar Home Assistant.
@@ -61,8 +61,9 @@ sensor:
     scan_interval: 1800
 ```
 
-
+- El parámetro "id_port" es el indicador del puerto y podrás elegir un valor de entre los disponibles por meteogalicia: https://www.meteogalicia.gal/datosred/infoweb/meteo/docs/rss/RSS_Mareas_gl.pdf
 - Con el parámetro opcional "scan_interval" indicas cada cuanto tiempo se conecta a meteogalicia para obtener la información. El valor es en segundos, por tanto, si pones 1200  hará el chequeo cada 20 minutos. Es recomendable usarlo.
+
   
 5. Reiniciar para que recarge la configuración y espera unos minutos a que aparezcan las nuevas entidades, con id: sensor.meteogalicia_tides_XXXX.
 

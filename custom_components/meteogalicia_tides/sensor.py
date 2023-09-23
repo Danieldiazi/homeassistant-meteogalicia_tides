@@ -136,28 +136,35 @@ class MeteoGaliciaForecastTide(
                             "id": self.id,
                         }
                         listaMareas = item.get("todayTides")
-                        
-                        if int(item.get("todayTides")[0]['@idTipoMarea']) ==1:
-                            state = "up"
-                        else:
-                            state ="down" 
+ 
 
-                        
+                        idNextTide = 0
+
                         for marea in listaMareas:
-                            self._attr["marea_"+marea.get("@id")+"_estado"] = marea.get("@estado")
-                            self._attr["marea_"+marea.get("@id")+"_hora"] = marea.get("@hora")
-                            self._attr["marea_"+marea.get("@id")+"_altura"] = marea.get("@altura")
+                            
                             hour = int(dt.now().strftime("%H"))
                             minute = int(dt.now().strftime("%M"))
+                            hour = int ("06")
                             hourTide = marea.get("@hora").split(":")[0]
                             minuteTide = marea.get("@hora").split(":")[1]
                             if (hour > int(hourTide)) or (hour == int(hourTide) and (minute >=int(minuteTide))):
-                                if int(marea.get("@idTipoMarea")) == 1:
-                                 state = "down"
-                                else:
-                                    state ="up"
+                               idNextTide =  int(marea.get("@id")) +1
                                 
-                        
+                        if (idNextTide>=len(listaMareas)):                            
+                            marea = item.get("tomorrowFirstTide")
+                        else: 
+                            marea = listaMareas[idNextTide]
+
+                        self._attr["state"] = marea.get("@estado")
+                        self._attr["height"] = marea.get("@altura")   
+                        if int(marea.get("@idTipoMarea")) == 0:
+                            state = "Low tide at " + marea.get("@hora")
+                        else:
+                           state ="High tide at " + marea.get("@hora")
+                                
+                                
+                                    
+                                
 
                         self._state = state
                         

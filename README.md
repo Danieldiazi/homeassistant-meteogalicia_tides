@@ -30,7 +30,7 @@ Para instalar esta integración en Home Assistant necesitarás:
 ## Instalación
 Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalación de esta integración son los siguientes:
 
-1. Añadir este repositorio (https://github.com/Danieldiazi/homeassistant-meteogalicia_tides) a los repositorios personalizados de HACS,
+1. Pulsa en [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=danieldiazi&repository=homeassistant-meteogalicia_tides&category=integration),
 
 2. Instalar la integración mediante HACS. [Más info](docs/HACS_add_integration.md)
 

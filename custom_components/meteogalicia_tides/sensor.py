@@ -5,7 +5,7 @@ import async_timeout
 import voluptuous as vol
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.components.switch import PLATFORM_SCHEMA
-from homeassistant.const import __version__, TEMP_CELSIUS, PERCENTAGE
+from homeassistant.const import __version__, PERCENTAGE
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from . import const
 from homeassistant.util import dt

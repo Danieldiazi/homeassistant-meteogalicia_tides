@@ -95,55 +95,16 @@ class MeteoGaliciaForecastTide(
 
     async def async_update(self) -> None:
         """Run async update ."""
-        information = []
         connected = False
         try:
             self._name = self.id
             async with async_timeout.timeout(const.TIMEOUT):
 
                 response = await get_forecast_tide_data(self.hass, self.id)
-
-                if response is None:
-                    self._state = None
-                    _LOGGER.warning(
-                        "[%s] Possible API connection problem. Currently unable to download data from MeteoGalicia",
-                        self.id,
-                    )
+                parsed = self._parse_response(response)
+                if not parsed:
                     return
-                else:
-                    if response.get("pointGeoRSS") is not None:
-                        item = response
-                        state = ""
-
-                        self._name = item.get("portName")
-
-                        self._attr = {
-                            "information": information,
-                            "integration": "meteogalicia_tides",
-                            "title": item.get("portName"),
-                            "date": item.get("date"),
-                            "id": self.id,
-                        }
-                        lista_mareas = item.get("todayTides")
-
-                        marea = get_next_tide(
-                            lista_mareas, item.get("tomorrowFirstTide")
-                        )
-                        if not marea:
-                            self._state = None
-                            _LOGGER.warning(
-                                "[%s] No tide data available from MeteoGalicia",
-                                self.id,
-                            )
-                            return
-
-                        self._attr["state"] = marea.get(const.ESTADO_FIELD)
-                        self._attr["height"] = marea.get(const.ALTURA_FIELD)
-                        self._attr["hour"] = marea.get(const.HORA_FIELD)
-
-                        state = get_state_from_tide(marea)
-
-                        self._state = state
+                self._state, self._attr = parsed
 
         except Exception:  # pylint: disable=broad-except
             self.exception = sys.exc_info()  # [0].__name__
@@ -171,6 +132,53 @@ class MeteoGaliciaForecastTide(
                     )
 
             self.connected = connected
+
+    def _parse_response(self, response):
+        if response is None:
+            self._state = None
+            _LOGGER.warning(
+                "[%s] Possible API connection problem. Currently unable to download data from MeteoGalicia",
+                self.id,
+            )
+            return None
+
+        if response.get("pointGeoRSS") is None:
+            self._state = None
+            _LOGGER.warning("[%s] Missing tide data from MeteoGalicia", self.id)
+            return None
+
+        item = response
+        self._name = item.get("portName")
+
+        lista_mareas = item.get("todayTides")
+        marea = get_next_tide(
+            lista_mareas, item.get("tomorrowFirstTide")
+        )
+        if not marea:
+            self._state = None
+            _LOGGER.warning(
+                "[%s] No tide data available from MeteoGalicia",
+                self.id,
+            )
+            return None
+
+        attrs = self._build_attributes(item, marea)
+        state = get_state_from_tide(marea)
+        return state, attrs
+
+    def _build_attributes(self, item, marea):
+        attrs = {
+            "information": [],
+            "integration": "meteogalicia_tides",
+            "title": item.get("portName"),
+            "date": item.get("date"),
+            "id": self.id,
+            "state": marea.get(const.ESTADO_FIELD),
+            "height": marea.get(const.ALTURA_FIELD),
+            "hour": marea.get(const.HORA_FIELD),
+        }
+        return attrs
+
 
     @property
     def name(self) -> str:

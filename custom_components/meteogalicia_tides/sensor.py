@@ -106,10 +106,10 @@ class MeteoGaliciaForecastTide(
                 if response is None:
                     self._state = None
                     _LOGGER.warning(
-                        "[%s] Possible API  connection  problem. Currently unable to download data from MeteoGalicia - HTTP status code %s",
+                        "[%s] Possible API connection problem. Currently unable to download data from MeteoGalicia",
                         self.id,
-                        response.status,
                     )
+                    return
                 else:
                     if response.get("pointGeoRSS") is not None:
                         item = response
@@ -128,8 +128,8 @@ class MeteoGaliciaForecastTide(
 
                         marea = get_next_tide (lista_mareas,item.get("tomorrowFirstTide") )
 
-                        self._attr["state"] = marea.get("@estado")
-                        self._attr["height"] = marea.get("@altura")
+                        self._attr["state"] = marea.get(const.ESTADO_FIELD)
+                        self._attr["height"] = marea.get(const.ALTURA_FIELD)
                         self._attr["hour"] = marea.get(const.HORA_FIELD)
 
                         state = get_state_from_tide(marea)

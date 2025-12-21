@@ -4,7 +4,7 @@ import logging
 import async_timeout
 import voluptuous as vol
 from homeassistant.exceptions import PlatformNotReady
-from homeassistant.components.switch import PLATFORM_SCHEMA
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import __version__, PERCENTAGE
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from . import const
@@ -126,7 +126,16 @@ class MeteoGaliciaForecastTide(
                         }
                         lista_mareas = item.get("todayTides")
 
-                        marea = get_next_tide (lista_mareas,item.get("tomorrowFirstTide") )
+                        marea = get_next_tide(
+                            lista_mareas, item.get("tomorrowFirstTide")
+                        )
+                        if not marea:
+                            self._state = None
+                            _LOGGER.warning(
+                                "[%s] No tide data available from MeteoGalicia",
+                                self.id,
+                            )
+                            return
 
                         self._attr["state"] = marea.get(const.ESTADO_FIELD)
                         self._attr["height"] = marea.get(const.ALTURA_FIELD)
@@ -192,6 +201,9 @@ class MeteoGaliciaForecastTide(
 
 
 def get_next_tide(lista_mareas, tomorrow_next_tide):
+
+    if not lista_mareas:
+        return tomorrow_next_tide
 
     marea = None
 

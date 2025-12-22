@@ -7,3 +7,4 @@ TIMEOUT = 60
 HORA_FIELD = "@hora"
 ESTADO_FIELD = "@estado"
 ALTURA_FIELD = "@altura"
+ID_TIPO_MAREA_FIELD = "@idTipoMarea"

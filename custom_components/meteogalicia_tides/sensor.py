@@ -162,8 +162,31 @@ class MeteoGaliciaForecastTide(
             )
             return None
 
+        if not marea.get(const.HORA_FIELD):
+            self._state = None
+            _LOGGER.warning(
+                "[%s] Missing tide hour data from MeteoGalicia",
+                self.id,
+            )
+            return None
+
+        if marea.get(const.ID_TIPO_MAREA_FIELD) is None:
+            self._state = None
+            _LOGGER.warning(
+                "[%s] Missing tide type data from MeteoGalicia",
+                self.id,
+            )
+            return None
+
         attrs = self._build_attributes(item, marea)
         state = get_state_from_tide(marea)
+        if state is None:
+            self._state = None
+            _LOGGER.warning(
+                "[%s] Invalid tide data from MeteoGalicia",
+                self.id,
+            )
+            return None
         return state, attrs
 
     def _build_attributes(self, item, marea):
@@ -233,11 +256,23 @@ def get_next_tide(lista_mareas, tomorrow_next_tide):
     return marea
 
 def get_state_from_tide(marea):
-    state = ""
-    if int(marea.get("@idTipoMarea")) == 0:
-        state = f"Low tide at {marea.get(const.HORA_FIELD)}"
+    if not marea:
+        return None
+
+    tide_type = marea.get(const.ID_TIPO_MAREA_FIELD)
+    tide_time = marea.get(const.HORA_FIELD)
+    if tide_type is None or not tide_time:
+        return None
+
+    try:
+        tide_type_int = int(tide_type)
+    except (TypeError, ValueError):
+        return None
+
+    if tide_type_int == 0:
+        state = f"Low tide at {tide_time}"
     else:
-        state = f"High tide at {marea.get(const.HORA_FIELD)}"
+        state = f"High tide at {tide_time}"
     return state
 
     

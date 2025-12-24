@@ -1,22 +1,14 @@
 """The Sensor module for MeteoGalicia_Tides integration."""
-import sys
 import logging
-import async_timeout
 import voluptuous as vol
 from homeassistant.exceptions import PlatformNotReady
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import __version__, PERCENTAGE
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from . import const
 from homeassistant.util import dt
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import (
-    SensorEntity,
-    SensorDeviceClass,
-    SensorStateClass,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from meteogalicia_api.interface import MeteoGalicia
+from .coordinator import MeteoGaliciaTidesCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +26,6 @@ async def async_setup_platform(
 ):  # pylint: disable=missing-docstring, unused-argument
     """Run async_setup_platform"""
 
-    session = async_create_clientsession(hass)
     if config.get(const.CONF_ID_PORT, ""):
         id_port = config[const.CONF_ID_PORT]
         if not id_port.isnumeric():
@@ -43,95 +34,39 @@ async def async_setup_platform(
             )
             return False
         else:
-            try:
-                async with async_timeout.timeout(const.TIMEOUT):
-                    await get_forecast_tide_data(hass, id_port)
-            except Exception as exception:
-                _LOGGER.warning("[%s] %s", sys.exc_info()
-                                [0].__name__, exception)
+            coordinator = MeteoGaliciaTidesCoordinator(hass, id_port)
+            await coordinator.async_refresh()
+            if not coordinator.last_update_success:
                 raise PlatformNotReady
 
-            add_entities(
-                [
-                    MeteoGaliciaForecastTide(
-                        id_port, session, hass
-                    )
-                ],
-                True,
-            )
+            add_entities([MeteoGaliciaForecastTide(id_port, coordinator)])
             _LOGGER.info(
                 "Added tide forecast sensor for port with id '%s'",  id_port)
 
 
-async def get_forecast_tide_data(hass, id_port):
-    """Poll weather data from MeteoGalicia API."""
-
-    data = await hass.async_add_executor_job(_get_forecast_tide_data_from_api, id_port)
-    return data
-
-
-def _get_forecast_tide_data_from_api(id_port):
-    """Call meteogalicia api in order to get obsertation data"""
-    meteogalicia_api = MeteoGalicia()
-    data = meteogalicia_api.get_forecast_tide(id_port)
-    return data
-
-
 class MeteoGaliciaForecastTide(
-    SensorEntity
+    CoordinatorEntity, SensorEntity
 ):  # pylint: disable=missing-docstring
     """Sensor class."""
 
     _attr_attribution = ATTRIBUTION
 
-    def __init__(self, idc, session, hass):
+    def __init__(self, idc, coordinator):
+        super().__init__(coordinator)
         self.id = idc
-        self.session = session
-        self._state = 0
-        self.connected = True
-        self.exception = None
+        self._state = None
         self._attr = {}
-        self.hass = hass
+        self._name = str(idc)
 
-    async def async_update(self) -> None:
-        """Run async update ."""
-        connected = False
-        try:
-            self._name = self.id
-            async with async_timeout.timeout(const.TIMEOUT):
-
-                response = await get_forecast_tide_data(self.hass, self.id)
-                parsed = self._parse_response(response)
-                if not parsed:
-                    return
-                self._state, self._attr = parsed
-
-        except Exception:  # pylint: disable=broad-except
-            self.exception = sys.exc_info()  # [0].__name__
-            connected = False
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        parsed = self._parse_response(self.coordinator.data)
+        if not parsed:
+            self._state = None
+            self._attr = {}
         else:
-            connected = True
-        finally:
-            # Handle connection messages here.
-            if self.connected:
-                if not connected:
-                    self._state = None
-                    _LOGGER.warning(
-                        "[%s] Couldn't update sensor (%s)",
-                        self.id,
-                        self.exception,
-                    )
-
-            elif not self.connected:
-                if connected:
-                    _LOGGER.info("[%s] Update of sensor completed", self.id)
-                else:
-                    self._state = None
-                    _LOGGER.warning(
-                        "[%s] Still no update available (%s)", self.id, self.exception
-                    )
-
-            self.connected = connected
+            self._state, self._attr = parsed
+        self.async_write_ha_state()
 
     def _parse_response(self, response):
         if response is None:
@@ -202,7 +137,6 @@ class MeteoGaliciaForecastTide(
         }
         return attrs
 
-
     @property
     def name(self) -> str:
         """Return the name."""
@@ -255,6 +189,7 @@ def get_next_tide(lista_mareas, tomorrow_next_tide):
         marea = lista_mareas[id_next_tide]
     return marea
 
+
 def get_state_from_tide(marea):
     if not marea:
         return None
@@ -274,5 +209,3 @@ def get_state_from_tide(marea):
     else:
         state = f"High tide at {tide_time}"
     return state
-
-    

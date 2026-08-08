@@ -4,7 +4,7 @@
   "codeowners": [
     "@danieldiazi"
   ],
-  "config_flow": false,
+  "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/Danieldiazi/homeassistant-meteogalicia_tides",
   "homekit": {},
@@ -12,6 +12,6 @@
   "issue_tracker": "https://github.com/Danieldiazi/homeassistant-meteogalicia_tides/issues",
   "requirements": ["MeteoGalicia-API==0.1.2"],
   "ssdp": [],
-  "version": "2023.8",
+  "version": "2026.8.0",
   "zeroconf": []
 }

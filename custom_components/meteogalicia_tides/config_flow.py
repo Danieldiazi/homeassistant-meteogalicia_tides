@@ -4,7 +4,6 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .const import CONF_ID_PORT, DOMAIN
@@ -32,7 +31,7 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> dict[str, Any]:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -50,14 +49,14 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(
         self, import_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    ) -> dict[str, Any]:
         """Import a port from legacy YAML configuration."""
         id_port = str(import_data[CONF_ID_PORT]).strip()
         if id_port.isdecimal():
             id_port = str(int(id_port))
         return await self._async_create_port_entry(id_port)
 
-    async def _async_create_port_entry(self, id_port: str) -> ConfigFlowResult:
+    async def _async_create_port_entry(self, id_port: str) -> dict[str, Any]:
         """Create a port entry while preventing duplicates."""
         await self.async_set_unique_id(id_port)
         self._abort_if_unique_id_configured()

@@ -115,7 +115,7 @@ class MeteoGaliciaForecastTide(
     def _parse_response(self, response):
         if response is None:
             self._state = None
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[%s] Possible API connection problem. Currently unable to download data from MeteoGalicia",
                 self.id,
             )
@@ -123,7 +123,7 @@ class MeteoGaliciaForecastTide(
 
         if response.get("pointGeoRSS") is None:
             self._state = None
-            _LOGGER.warning("[%s] Missing tide data from MeteoGalicia", self.id)
+            _LOGGER.debug("[%s] Missing tide data from MeteoGalicia", self.id)
             return None
 
         item = response
@@ -135,7 +135,7 @@ class MeteoGaliciaForecastTide(
         )
         if not marea:
             self._state = None
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[%s] No tide data available from MeteoGalicia",
                 self.id,
             )
@@ -143,7 +143,7 @@ class MeteoGaliciaForecastTide(
 
         if not marea.get(const.HORA_FIELD):
             self._state = None
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[%s] Missing tide hour data from MeteoGalicia",
                 self.id,
             )
@@ -151,7 +151,7 @@ class MeteoGaliciaForecastTide(
 
         if marea.get(const.ID_TIPO_MAREA_FIELD) is None:
             self._state = None
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[%s] Missing tide type data from MeteoGalicia",
                 self.id,
             )
@@ -161,7 +161,7 @@ class MeteoGaliciaForecastTide(
         state = get_state_from_tide(marea)
         if state is None:
             self._state = None
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[%s] Invalid tide data from MeteoGalicia",
                 self.id,
             )

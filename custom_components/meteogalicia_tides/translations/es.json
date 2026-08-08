@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Añadir un puerto de mareas de MeteoGalicia",
+        "description": "Introduce el identificador de puerto asignado por MeteoGalicia.",
+        "data": {
+          "id_port": "ID del puerto"
+        }
+      }
+    },
+    "error": {
+      "invalid_port": "El ID del puerto debe ser un número positivo"
+    },
+    "abort": {
+      "already_configured": "Este puerto ya está configurado"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_tide_time": {"name": "Próxima marea"},
+      "next_tide_type": {"name": "Tipo de la próxima marea"},
+      "next_tide_height": {"name": "Altura de la próxima marea"}
+    }
+  }
+}

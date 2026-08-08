@@ -36,9 +36,9 @@ Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalaci
 
 3. Reiniciar Home Assistant.
 
-4. Añadir la integración desde **Ajustes → Dispositivos y servicios → Añadir integración**, buscar **MeteoGalicia Tides** e introducir el identificador del puerto.
+4. Añadir la integración desde **Ajustes → Dispositivos y servicios → Añadir integración**, buscar **MeteoGalicia Tides** y seleccionar el puerto por su nombre.
 
-La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes:
+La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes. Al iniciar Home Assistant, cada puerto configurado en YAML se importará automáticamente a **Dispositivos y servicios**, conservando el mismo identificador único de la entidad. Después de comprobar la importación, puedes retirar ese bloque YAML.
 
 Si quieres añadir la información para un puerto dado:
 ``` yaml

@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Engadir un porto de mareas de MeteoGalicia",
-        "description": "Introduce o identificador de porto asignado por MeteoGalicia.",
+        "description": "Selecciona un porto do servizo oficial de mareas de MeteoGalicia.",
         "data": {
-          "id_port": "ID do porto"
+          "id_port": "Porto"
         }
       }
     },
     "error": {
-      "invalid_port": "O ID do porto debe ser un número positivo"
+      "invalid_port": "Selecciona un porto válido"
     },
     "abort": {
       "already_configured": "Este porto xa está configurado"

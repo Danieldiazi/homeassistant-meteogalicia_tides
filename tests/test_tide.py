@@ -1,31 +1,13 @@
 """Tests for tide selection helpers."""
 
 from datetime import datetime
-import importlib.util
-from pathlib import Path
-import sys
-from types import ModuleType
 import unittest
 
-
-PACKAGE_NAME = "custom_components.meteogalicia_tides"
-PACKAGE_PATH = Path(__file__).parents[1] / "custom_components/meteogalicia_tides"
-package = ModuleType(PACKAGE_NAME)
-package.__path__ = [str(PACKAGE_PATH)]
-sys.modules[PACKAGE_NAME] = package
-
-for module_name in ("const", "tide"):
-    spec = importlib.util.spec_from_file_location(
-        f"{PACKAGE_NAME}.{module_name}", PACKAGE_PATH / f"{module_name}.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-
-tide_module = sys.modules[f"{PACKAGE_NAME}.tide"]
-get_next_tide = tide_module.get_next_tide
-get_next_tide_with_day = tide_module.get_next_tide_with_day
-get_state_from_tide = tide_module.get_state_from_tide
+from custom_components.meteogalicia_tides.tide import (
+    get_next_tide,
+    get_next_tide_with_day,
+    get_state_from_tide,
+)
 
 
 TODAY = [

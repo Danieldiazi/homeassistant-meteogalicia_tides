@@ -16,8 +16,12 @@ class CompatibilityTest(unittest.TestCase):
         sensor = (
             ROOT / "custom_components/meteogalicia_tides/sensor.py"
         ).read_text()
+        config_flow = (
+            ROOT / "custom_components/meteogalicia_tides/config_flow.py"
+        ).read_text()
 
         self.assertIn('DOMAIN = "meteogalicia_tides"', const)
         self.assertIn('CONF_ID_PORT = "id_port"', const)
         self.assertIn("_forecast_tides_id_{self.id}", sensor)
         self.assertIn('return f"{self._name} - Forecast Tides"', sensor)
+        self.assertIn("async_step_import", config_flow)

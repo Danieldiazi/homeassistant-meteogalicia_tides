@@ -3,14 +3,14 @@
     "step": {
       "user": {
         "title": "Add a MeteoGalicia tide port",
-        "description": "Enter the port ID assigned by MeteoGalicia.",
+        "description": "Select a port from the official MeteoGalicia tide service.",
         "data": {
-          "id_port": "Port ID"
+          "id_port": "Port"
         }
       }
     },
     "error": {
-      "invalid_port": "The port ID must be a positive number"
+      "invalid_port": "Select a valid port"
     },
     "abort": {
       "already_configured": "This port is already configured"

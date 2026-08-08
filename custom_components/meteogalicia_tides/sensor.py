@@ -1,14 +1,28 @@
-"""The Sensor module for MeteoGalicia_Tides integration."""
-import logging
-import voluptuous as vol
-from homeassistant.exceptions import PlatformNotReady
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
-from . import const
-from homeassistant.util import dt
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+"""Sensor platform for the MeteoGalicia Tides integration."""
 
+from datetime import datetime, timedelta
+import logging
+
+import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA,
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfLength
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import PlatformNotReady
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt
+
+from . import const
 from .coordinator import MeteoGaliciaTidesCoordinator
+from .tide import get_next_tide, get_next_tide_with_day, get_state_from_tide
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,8 +30,25 @@ ATTRIBUTION = "Data provided by MeteoGalicia"
 
 # Obtaining config from configuration.yaml
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {vol.Required(const.CONF_ID_PORT): cv.string, }
+    {vol.Required(const.CONF_ID_PORT): cv.string}
+)
 
+NEXT_TIDE_TIME_DESCRIPTION = SensorEntityDescription(
+    key="next_tide_time",
+    translation_key="next_tide_time",
+    device_class=SensorDeviceClass.TIMESTAMP,
+    entity_registry_enabled_default=False,
+)
+TIDE_TYPE_DESCRIPTION = SensorEntityDescription(
+    key="next_tide_type",
+    translation_key="next_tide_type",
+    entity_registry_enabled_default=False,
+)
+TIDE_HEIGHT_DESCRIPTION = SensorEntityDescription(
+    key="next_tide_height",
+    translation_key="next_tide_height",
+    native_unit_of_measurement=UnitOfLength.METERS,
+    entity_registry_enabled_default=False,
 )
 
 
@@ -39,9 +70,29 @@ async def async_setup_platform(
             if not coordinator.last_update_success:
                 raise PlatformNotReady
 
-            add_entities([MeteoGaliciaForecastTide(id_port, coordinator)])
+            add_entities(_create_entities(id_port, coordinator))
             _LOGGER.info(
                 "Added tide forecast sensor for port with id '%s'",  id_port)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up sensors from a config entry."""
+    coordinator = hass.data[const.DOMAIN][entry.entry_id]
+    async_add_entities(_create_entities(entry.data[const.CONF_ID_PORT], coordinator))
+
+
+def _create_entities(id_port, coordinator):
+    """Create the legacy sensor and additional disabled-by-default sensors."""
+    return [
+        MeteoGaliciaForecastTide(id_port, coordinator),
+        MeteoGaliciaTideTimeSensor(id_port, coordinator, NEXT_TIDE_TIME_DESCRIPTION),
+        MeteoGaliciaTideTypeSensor(id_port, coordinator, TIDE_TYPE_DESCRIPTION),
+        MeteoGaliciaTideHeightSensor(id_port, coordinator, TIDE_HEIGHT_DESCRIPTION),
+    ]
 
 
 class MeteoGaliciaForecastTide(
@@ -57,16 +108,21 @@ class MeteoGaliciaForecastTide(
         self._state = None
         self._attr = {}
         self._name = str(idc)
+        self._update_from_response(self.coordinator.data)
 
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        parsed = self._parse_response(self.coordinator.data)
+        self._update_from_response(self.coordinator.data)
+        self.async_write_ha_state()
+
+    def _update_from_response(self, response) -> None:
+        """Update cached legacy state and attributes."""
+        parsed = self._parse_response(response)
         if not parsed:
             self._state = None
             self._attr = {}
         else:
             self._state, self._attr = parsed
-        self.async_write_ha_state()
 
     def _parse_response(self, response):
         if response is None:
@@ -87,7 +143,7 @@ class MeteoGaliciaForecastTide(
 
         lista_mareas = item.get("todayTides")
         marea = get_next_tide(
-            lista_mareas, item.get("tomorrowFirstTide")
+            lista_mareas, item.get("tomorrowFirstTide"), dt.now()
         )
         if not marea:
             self._state = None
@@ -164,48 +220,102 @@ class MeteoGaliciaForecastTide(
         """Return the state of the sensor."""
         return self._state
 
-
-def get_next_tide(lista_mareas, tomorrow_next_tide):
-
-    if not lista_mareas:
-        return tomorrow_next_tide
-
-    marea = None
-
-    id_next_tide = 0
-
-    for marea in lista_mareas:
-
-        hour = int(dt.now().strftime("%H"))
-        minute = int(dt.now().strftime("%M"))
-        hour_tide = marea.get(const.HORA_FIELD).split(":")[0]
-        minute_tide = marea.get(const.HORA_FIELD).split(":")[1]
-        if (hour > int(hour_tide)) or (hour == int(hour_tide) and (minute >= int(minute_tide))):
-            id_next_tide = int(marea.get("@id")) + 1
-
-    if (id_next_tide >= len(lista_mareas)):
-        marea = tomorrow_next_tide
-    else:
-        marea = lista_mareas[id_next_tide]
-    return marea
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return information grouping entities for this port."""
+        return _device_info(self.id, self._name)
 
 
-def get_state_from_tide(marea):
-    if not marea:
-        return None
+class MeteoGaliciaTideSensorBase(CoordinatorEntity, SensorEntity):
+    """Base class for structured tide sensors."""
 
-    tide_type = marea.get(const.ID_TIPO_MAREA_FIELD)
-    tide_time = marea.get(const.HORA_FIELD)
-    if tide_type is None or not tide_time:
-        return None
+    _attr_attribution = ATTRIBUTION
+    _attr_has_entity_name = True
 
-    try:
-        tide_type_int = int(tide_type)
-    except (TypeError, ValueError):
-        return None
+    def __init__(self, id_port, coordinator, description):
+        super().__init__(coordinator)
+        self.id_port = id_port
+        self.entity_description = description
+        self._attr_unique_id = (
+            f"{const.INTEGRATION_NAME.lower()}_{description.key}_id_{id_port}"
+        )
 
-    if tide_type_int == 0:
-        state = f"Low tide at {tide_time}"
-    else:
-        state = f"High tide at {tide_time}"
-    return state
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return information grouping entities for this port."""
+        data = self.coordinator.data or {}
+        return _device_info(
+            self.id_port, data.get("portName") or str(self.id_port)
+        )
+
+    def _selection(self):
+        data = self.coordinator.data or {}
+        return get_next_tide_with_day(
+            data.get("todayTides"), data.get("tomorrowFirstTide"), dt.now()
+        )
+
+
+class MeteoGaliciaTideTimeSensor(MeteoGaliciaTideSensorBase):
+    """Timestamp of the next tide."""
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the local date and time of the next tide."""
+        tide, is_tomorrow = self._selection()
+        if not tide or not isinstance(tide.get(const.HORA_FIELD), str):
+            return None
+        try:
+            hour, minute = (
+                int(value) for value in tide[const.HORA_FIELD].split(":", 1)
+            )
+            current = dt.now()
+            tide_date = current.date() + timedelta(days=int(is_tomorrow))
+            return datetime.combine(
+                tide_date, datetime.min.time(), tzinfo=current.tzinfo
+            ).replace(hour=hour, minute=minute)
+        except (TypeError, ValueError):
+            return None
+
+
+class MeteoGaliciaTideTypeSensor(MeteoGaliciaTideSensorBase):
+    """Type of the next tide."""
+
+    @property
+    def native_value(self) -> str | None:
+        """Return high or low for the next tide."""
+        tide, _ = self._selection()
+        if not tide:
+            return None
+        try:
+            return (
+                "low"
+                if int(tide.get(const.ID_TIPO_MAREA_FIELD)) == 0
+                else "high"
+            )
+        except (TypeError, ValueError):
+            return None
+
+
+class MeteoGaliciaTideHeightSensor(MeteoGaliciaTideSensorBase):
+    """Height of the next tide."""
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the next tide height in metres."""
+        tide, _ = self._selection()
+        if not tide:
+            return None
+        try:
+            return float(str(tide.get(const.ALTURA_FIELD)).replace(",", "."))
+        except (TypeError, ValueError):
+            return None
+
+
+def _device_info(id_port, port_name) -> DeviceInfo:
+    """Build stable device information for a port."""
+    return DeviceInfo(
+        identifiers={(const.DOMAIN, str(id_port))},
+        manufacturer="MeteoGalicia",
+        name=str(port_name),
+        model="Tide forecast",
+    )

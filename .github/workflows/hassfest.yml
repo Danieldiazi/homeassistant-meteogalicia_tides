@@ -9,6 +9,8 @@ on:
 jobs:
   validate:
     runs-on: "ubuntu-latest"
+    permissions:
+      contents: read
     steps:
-        - uses: "actions/checkout@v3"
-        - uses: "home-assistant/actions/hassfest@master"
+        - uses: "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+        - uses: "home-assistant/actions/hassfest@a7c616ce81ccda50150bf1595786c71b1883fabb"

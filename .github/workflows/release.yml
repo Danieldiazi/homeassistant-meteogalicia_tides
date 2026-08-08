@@ -8,19 +8,17 @@ jobs:
   release:
     name: Prepare release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
       - name: Create zip file
         run: |
           cd custom_components/meteogalicia_tides
           zip ../../homeassistant-meteogalicia_tides.zip -r ./
       - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: homeassistant-meteogalicia_tides.zip
-          asset_name: homeassistant-meteogalicia_tides.zip
-          tag: ${{ github.ref }}
-          overwrite: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" homeassistant-meteogalicia_tides.zip --clobber

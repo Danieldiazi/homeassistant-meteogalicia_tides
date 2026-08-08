@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a MeteoGalicia tide port",
+        "description": "Enter the port ID assigned by MeteoGalicia.",
+        "data": {
+          "id_port": "Port ID"
+        }
+      }
+    },
+    "error": {
+      "invalid_port": "The port ID must be a positive number"
+    },
+    "abort": {
+      "already_configured": "This port is already configured"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_tide_time": {
+        "name": "Next tide"
+      },
+      "next_tide_type": {
+        "name": "Next tide type"
+      },
+      "next_tide_height": {
+        "name": "Next tide height"
+      }
+    }
+  }
+}

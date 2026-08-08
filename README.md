@@ -36,9 +36,11 @@ Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalaci
 
 3. Reiniciar Home Assistant.
 
-4. Configurarla mediante el fichero de configuración `configuration.yaml` (u otro que uses):
+4. Añadir la integración desde **Ajustes → Dispositivos y servicios → Añadir integración**, buscar **MeteoGalicia Tides** e introducir el identificador del puerto.
 
- Si quieres añadir la información para un ayuntamiento dado:
+La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes:
+
+Si quieres añadir la información para un puerto dado:
 ``` yaml
 sensor:
   platform: meteogalicia_tides
@@ -63,7 +65,11 @@ sensor:
 - Con el parámetro opcional "scan_interval" indicas cada cuanto tiempo se conecta a meteogalicia para obtener la información. El valor es en segundos, por tanto, si pones 1200  hará el chequeo cada 20 minutos. Es recomendable usarlo.
 
   
-5. Reiniciar para que recarge la configuración y espera unos minutos a que aparezcan las nuevas entidades, con id: sensor.meteogalicia_tides_XXXX.
+5. Si utilizas YAML, reinicia para que se recargue la configuración y espera unos minutos a que aparezca la entidad.
+
+La entidad histórica mantiene su identificador único y su estado para no romper automatizaciones existentes. La integración también crea, deshabilitados por defecto, sensores estructurados para la fecha y hora, el tipo y la altura de la próxima marea. Puedes habilitarlos desde la página del dispositivo.
+
+No configures el mismo puerto simultáneamente mediante la interfaz y YAML.
 
 
 ## FAQ

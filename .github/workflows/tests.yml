@@ -20,8 +20,8 @@ jobs:
         with:
           version: "0.12.3"
           enable-cache: true
-      - run: uv run --frozen ruff check .
-      - run: uv run --frozen pytest -v
+      - run: uv run --frozen --group test ruff check .
+      - run: uv run --frozen --group test pytest -v
 
   python-314:
     name: Python 3.14 source compatibility

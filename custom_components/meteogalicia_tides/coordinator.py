@@ -1,29 +1,24 @@
 """Coordinator for the MeteoGalicia_Tides integration."""
 import asyncio
-from collections.abc import Mapping
-from datetime import timedelta
 import logging
+from collections.abc import Mapping
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
 from meteogalicia_api.interface import MeteoGalicia
 
 from . import const
 
 _LOGGER = logging.getLogger(__name__)
 
-_DEFAULT_UPDATE_INTERVAL = timedelta(seconds=30)
-
-
 class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
     """Class to manage fetching MeteoGalicia tide data."""
 
-    def __init__(self, hass, id_port):
+    def __init__(self, hass, id_port, update_interval=None):
         super().__init__(
             hass,
             _LOGGER,
             name=f"{const.DOMAIN}_{id_port}",
-            update_interval=_DEFAULT_UPDATE_INTERVAL,
+            update_interval=update_interval or const.DEFAULT_UPDATE_INTERVAL,
         )
         self.id_port = id_port
 
@@ -67,4 +62,22 @@ def _is_valid_response(response):
         tomorrow_first_tide, Mapping
     ):
         return False
-    return all(isinstance(tide, Mapping) for tide in today_tides)
+    tides = [*today_tides]
+    if tomorrow_first_tide is not None:
+        tides.append(tomorrow_first_tide)
+    return bool(tides) and all(_is_valid_tide(tide) for tide in tides)
+
+
+def _is_valid_tide(tide):
+    """Return whether a tide has the fields required by every entity."""
+    if not isinstance(tide, Mapping):
+        return False
+    tide_time = tide.get(const.HORA_FIELD)
+    if not isinstance(tide_time, str):
+        return False
+    try:
+        hour, minute = (int(value) for value in tide_time.split(":", 1))
+        int(tide[const.ID_TIPO_MAREA_FIELD])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return 0 <= hour <= 23 and 0 <= minute <= 59

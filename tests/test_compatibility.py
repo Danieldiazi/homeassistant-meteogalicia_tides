@@ -1,8 +1,7 @@
 """Compatibility regression checks."""
 
-from pathlib import Path
 import unittest
-
+from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 
@@ -25,3 +24,4 @@ class CompatibilityTest(unittest.TestCase):
         self.assertIn("_forecast_tides_id_{self.id}", sensor)
         self.assertIn('return f"{self._name} - Forecast Tides"', sensor)
         self.assertIn("async_step_import", config_flow)
+        self.assertNotIn("ConfigFlowResult", config_flow)

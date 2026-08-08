@@ -9,7 +9,6 @@ from custom_components.meteogalicia_tides.coordinator import (
     MeteoGaliciaTidesCoordinator,
 )
 
-
 VALID_RESPONSE = {
     "pointGeoRSS": "43.36 -8.40",
     "date": "2026-08-08T00:00:00Z",
@@ -60,6 +59,38 @@ async def test_coordinator_rejects_empty_or_invalid_response(
         hass, "async_add_executor_job", AsyncMock(return_value=response)
     ):
         with pytest.raises(UpdateFailed, match=message):
+            await coordinator._async_update_data()
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        {
+            "pointGeoRSS": "43 -8",
+            "todayTides": [],
+            "tomorrowFirstTide": None,
+        },
+        {
+            "pointGeoRSS": "43 -8",
+            "todayTides": [{"@hora": "25:99", "@idTipoMarea": "1"}],
+            "tomorrowFirstTide": None,
+        },
+        {
+            "pointGeoRSS": "43 -8",
+            "todayTides": [{"@hora": "12:00"}],
+            "tomorrowFirstTide": None,
+        },
+    ],
+)
+async def test_coordinator_rejects_responses_without_usable_tides(
+    hass, response
+):
+    """A structurally valid response still needs a usable tide."""
+    coordinator = MeteoGaliciaTidesCoordinator(hass, "1")
+    with patch.object(
+        hass, "async_add_executor_job", AsyncMock(return_value=response)
+    ):
+        with pytest.raises(UpdateFailed, match="invalid response"):
             await coordinator._async_update_data()
 
 

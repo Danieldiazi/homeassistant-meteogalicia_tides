@@ -11,17 +11,15 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import UnitOfLength
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt
 
 from . import const
-from .coordinator import MeteoGaliciaTidesCoordinator
 from .tide import get_next_tide, get_next_tide_with_day, get_state_from_tide
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,24 +53,14 @@ TIDE_HEIGHT_DESCRIPTION = SensorEntityDescription(
 async def async_setup_platform(
     hass, config, add_entities, discovery_info=None
 ):  # pylint: disable=missing-docstring, unused-argument
-    """Run async_setup_platform"""
-
-    if config.get(const.CONF_ID_PORT, ""):
-        id_port = config[const.CONF_ID_PORT]
-        if not id_port.isnumeric():
-            _LOGGER.critical(
-                "Configured (YAML) 'id_port '%s' is not valid", id_port
-            )
-            return False
-        else:
-            coordinator = MeteoGaliciaTidesCoordinator(hass, id_port)
-            await coordinator.async_refresh()
-            if not coordinator.last_update_success:
-                raise PlatformNotReady
-
-            add_entities(_create_entities(id_port, coordinator))
-            _LOGGER.info(
-                "Added tide forecast sensor for port with id '%s'",  id_port)
+    """Import legacy YAML configuration into a config entry."""
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            const.DOMAIN,
+            context={"source": SOURCE_IMPORT},
+            data={const.CONF_ID_PORT: config[const.CONF_ID_PORT]},
+        )
+    )
 
 
 async def async_setup_entry(

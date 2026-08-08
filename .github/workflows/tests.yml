@@ -24,7 +24,7 @@ jobs:
       - run: uv run --frozen --group test pytest -v
 
   python-314:
-    name: Python 3.14 source compatibility
+    name: Home Assistant tests (Python 3.14)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -35,5 +35,5 @@ jobs:
         with:
           version: "0.12.3"
           enable-cache: true
-      - run: python -m compileall -q custom_components tests
-      - run: uvx --no-build --from ruff==0.12.7 ruff check .
+      - run: uv run --frozen --group test ruff check .
+      - run: uv run --frozen --group test pytest -v

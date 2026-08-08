@@ -35,6 +35,9 @@ async def test_diagnostics_are_useful_and_do_not_expose_coordinates(hass):
         "scan_interval_seconds": 1800,
     }
     assert result["coordinator"]["last_update_success"] is True
+    assert result["coordinator"]["consecutive_failures"] == 0
+    assert result["coordinator"]["effective_update_interval_seconds"] == 30
+    assert result["library"]["meteogalicia_api_version"] == "0.1.2"
     assert result["response"]["today_tide_count"] == 1
     assert result["response"]["has_tomorrow_tide"] is True
     assert "pointGeoRSS" not in str(result)

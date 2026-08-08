@@ -18,6 +18,10 @@ Por cada puerto crea estas entidades:
 | Próxima marea | Fecha y hora de la próxima marea | Desactivada |
 | Tipo de la próxima marea | Pleamar o bajamar en formato estructurado | Desactivada |
 | Altura de la próxima marea | Altura prevista en metros | Desactivada |
+| Próxima pleamar | Fecha y hora de la siguiente pleamar disponible | Desactivada |
+| Próxima bajamar | Fecha y hora de la siguiente bajamar disponible | Desactivada |
+| Marea siguiente | Fecha y hora de la marea posterior a la próxima | Desactivada |
+| Número de mareas de hoy | Cantidad de mareas incluidas en la previsión de hoy | Desactivada |
 
 La entidad histórica conserva su nombre, estado e identificador único para no romper automatizaciones existentes.
 
@@ -40,9 +44,11 @@ Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalaci
 
 4. Añadir la integración desde **Ajustes → Dispositivos y servicios → Añadir integración**, buscar **MeteoGalicia Tides** y seleccionar el puerto por su nombre.
 
+Antes de guardar la entrada se comprueba que MeteoGalicia responde y que los datos del puerto tienen un formato válido.
+
 El intervalo predeterminado de las nuevas entradas es de 30 segundos. Puedes modificarlo desde **Ajustes → Dispositivos y servicios → MeteoGalicia Tides → Configurar**, entre 30 segundos y 24 horas.
 
-La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes. Al iniciar Home Assistant, cada puerto configurado en YAML se importará automáticamente a **Dispositivos y servicios**, conservando el mismo identificador único de la entidad. Después de comprobar la importación, puedes retirar ese bloque YAML.
+La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes. Al iniciar Home Assistant, cada puerto configurado en YAML se importará automáticamente a **Dispositivos y servicios**, conservando el mismo identificador único de la entidad. Home Assistant mostrará una reparación para recordar que ya puedes retirar ese bloque YAML.
 
 Si quieres añadir la información para un puerto dado:
 ``` yaml
@@ -71,7 +77,7 @@ sensor:
   
 5. Si utilizas YAML, reinicia para que se recargue la configuración y espera unos minutos a que aparezca la entidad.
 
-La integración ofrece además **Descargar diagnósticos** desde el menú de la entrada. El archivo incluye el estado del coordinador y un resumen de la respuesta, pero no las coordenadas devueltas por la API.
+La integración ofrece además **Descargar diagnósticos** desde el menú de la entrada. El archivo incluye los últimos intentos y aciertos, duración de la petición, motivo del último fallo, backoff efectivo, versión del cliente y un resumen de la respuesta, pero no las coordenadas devueltas por la API.
 
 No configures el mismo puerto simultáneamente mediante la interfaz y YAML.
 
@@ -79,7 +85,7 @@ No configures el mismo puerto simultáneamente mediante la interfaz y YAML.
 ## FAQ
 
 ###### La integración aparece como no disponible
-El coordinador marca las entidades como no disponibles cuando MeteoGalicia no responde, devuelve contenido vacío o proporciona una respuesta inválida. Home Assistant volverá a intentarlo en el siguiente intervalo.
+El coordinador marca las entidades como no disponibles cuando MeteoGalicia no responde, devuelve contenido vacío o proporciona una respuesta inválida. Tras fallos consecutivos reduce progresivamente la frecuencia de consulta, hasta un máximo de 24 horas, y recupera el intervalo configurado en cuanto obtiene una respuesta válida.
 
 ###### TimeoutError
 Si aparece el mensaje *MeteoGalicia request timed out*, el servicio no respondió antes de 60 segundos. Revisa la conexión y espera al siguiente intento.

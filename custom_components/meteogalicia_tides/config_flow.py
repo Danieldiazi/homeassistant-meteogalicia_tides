@@ -1,10 +1,15 @@
 """Config flow for MeteoGalicia Tides."""
 
+import asyncio
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import (
     CONF_ID_PORT,
@@ -13,8 +18,21 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    TIMEOUT,
 )
+from .coordinator import _get_forecast_tide_data_from_api, _is_valid_response
 from .ports import PORTS, port_name
+
+SCAN_INTERVAL_OPTIONS = [
+    {"label": "30 seconds", "value": "30"},
+    {"label": "1 minute", "value": "60"},
+    {"label": "5 minutes", "value": "300"},
+    {"label": "15 minutes", "value": "900"},
+    {"label": "30 minutes", "value": "1800"},
+    {"label": "1 hour", "value": "3600"},
+    {"label": "6 hours", "value": "21600"},
+    {"label": "24 hours", "value": "86400"},
+]
 
 PORT_SCHEMA = vol.Schema(
     {
@@ -38,7 +56,7 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     def async_get_options_flow(config_entry):
         """Return the options flow handler."""
-        return MeteoGaliciaTidesOptionsFlow(config_entry)
+        return MeteoGaliciaTidesOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -50,7 +68,22 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if id_port not in PORTS:
                 errors[CONF_ID_PORT] = "invalid_port"
             else:
-                return await self._async_create_port_entry(id_port)
+                await self.async_set_unique_id(id_port)
+                self._abort_if_unique_id_configured()
+                try:
+                    async with asyncio.timeout(TIMEOUT):
+                        response = await self.hass.async_add_executor_job(
+                            _get_forecast_tide_data_from_api, id_port
+                        )
+                except (TimeoutError, OSError):
+                    errors["base"] = "cannot_connect"
+                except Exception:  # noqa: BLE001
+                    errors["base"] = "unknown"
+                else:
+                    if not _is_valid_response(response):
+                        errors["base"] = "invalid_response"
+                    else:
+                        return await self._async_create_port_entry(id_port)
 
         return self.async_show_form(
             step_id="user",
@@ -92,15 +125,22 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlow):
     """Handle MeteoGalicia Tides options."""
 
-    def __init__(self, config_entry) -> None:
-        self.config_entry = config_entry
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Configure the polling interval."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            try:
+                interval = int(user_input[CONF_SCAN_INTERVAL])
+            except (TypeError, ValueError):
+                errors["base"] = "invalid_interval"
+            else:
+                if MIN_SCAN_INTERVAL <= interval <= MAX_SCAN_INTERVAL:
+                    return self.async_create_entry(
+                        title="", data={CONF_SCAN_INTERVAL: interval}
+                    )
+                errors["base"] = "invalid_interval"
 
         current_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL,
@@ -113,14 +153,15 @@ class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_SCAN_INTERVAL, default=current_interval
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=MIN_SCAN_INTERVAL,
-                            max=MAX_SCAN_INTERVAL,
-                        ),
+                        CONF_SCAN_INTERVAL, default=str(current_interval)
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=SCAN_INTERVAL_OPTIONS,
+                            custom_value=True,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
                     )
                 }
             ),
+            errors=errors,
         )

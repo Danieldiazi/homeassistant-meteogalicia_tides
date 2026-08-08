@@ -10,13 +10,17 @@
       }
     },
     "error": {
-      "invalid_port": "Selecciona un porto válido"
+      "invalid_port": "Selecciona un porto válido",
+      "cannot_connect": "Non se pode conectar con MeteoGalicia",
+      "invalid_response": "MeteoGalicia devolveu datos de mareas non válidos",
+      "unknown": "Erro inesperado"
     },
     "abort": {
       "already_configured": "Este porto xa está configurado"
     }
   },
   "options": {
+    "error": {"invalid_interval": "Introduce un valor entre 30 e 86400 segundos"},
     "step": {
       "init": {
         "title": "Intervalo de actualización",
@@ -30,8 +34,18 @@
   "entity": {
     "sensor": {
       "next_tide_time": {"name": "Próxima marea"},
-      "next_tide_type": {"name": "Tipo da próxima marea"},
-      "next_tide_height": {"name": "Altura da próxima marea"}
+      "next_tide_type": {"name": "Tipo da próxima marea", "state": {"high": "Preamar", "low": "Baixamar"}},
+      "next_tide_height": {"name": "Altura da próxima marea"},
+      "next_high_tide": {"name": "Próxima preamar"},
+      "next_low_tide": {"name": "Próxima baixamar"},
+      "second_next_tide": {"name": "Marea seguinte"},
+      "today_tide_count": {"name": "Número de mareas de hoxe"}
+    }
+  },
+  "issues": {
+    "remove_yaml": {
+      "title": "Elimina a configuración YAML migrada de MeteoGalicia Tides",
+      "description": "O porto {port} xa se migrou á interface. Elimina a súa configuración do sensor `meteogalicia_tides` de `configuration.yaml` e reinicia Home Assistant para que non volva aparecer este aviso."
     }
   }
 }

@@ -44,8 +44,13 @@ async def test_full_entry_setup_entities_and_unload(hass):
 
 async def test_yaml_setup_waits_for_import_and_preserves_interval(hass):
     """Legacy YAML import is awaited and retains its exact interval."""
-    flow_init = AsyncMock()
-    with patch.object(hass.config_entries.flow, "async_init", flow_init):
+    flow_init = AsyncMock(return_value={"type": "create_entry"})
+    with (
+        patch.object(hass.config_entries.flow, "async_init", flow_init),
+        patch(
+            "custom_components.meteogalicia_tides.sensor.ir.async_create_issue"
+        ) as create_issue,
+    ):
         await async_setup_platform(
             hass,
             {
@@ -60,3 +65,9 @@ async def test_yaml_setup_waits_for_import_and_preserves_interval(hass):
         CONF_ID_PORT: "3",
         CONF_SCAN_INTERVAL: 1800,
     }
+    assert create_issue.call_args.args[:3] == (
+        hass,
+        DOMAIN,
+        "remove_yaml_3",
+    )
+    assert create_issue.call_args.kwargs["translation_key"] == "remove_yaml"

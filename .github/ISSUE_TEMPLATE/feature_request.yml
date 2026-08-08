@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement for MeteoGalicia Tides
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What would you like to achieve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility
+      options:
+        - label: This proposal can preserve existing entity IDs and automations.
+          required: true

@@ -12,6 +12,8 @@ from custom_components.meteogalicia_tides.const import (
     DOMAIN,
 )
 
+from .test_coordinator_ha import VALID_RESPONSE
+
 
 async def test_user_flow_creates_port_entry(hass):
     """A selected port creates a stable config entry."""
@@ -20,9 +22,16 @@ async def test_user_flow_creates_port_entry(hass):
     )
     assert result["type"] is FlowResultType.FORM
 
-    with patch(
-        "custom_components.meteogalicia_tides.async_setup_entry",
-        new=AsyncMock(return_value=True),
+    with (
+        patch(
+            "custom_components.meteogalicia_tides.async_setup_entry",
+            new=AsyncMock(return_value=True),
+        ),
+        patch.object(
+            hass,
+            "async_add_executor_job",
+            AsyncMock(return_value=VALID_RESPONSE),
+        ),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_ID_PORT: "1"}
@@ -104,8 +113,54 @@ async def test_options_flow_updates_scan_interval(hass):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.FORM
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_SCAN_INTERVAL: 1800}
+        result["flow_id"], {CONF_SCAN_INTERVAL: "1800"}
     )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options == {CONF_SCAN_INTERVAL: 1800}
+
+
+async def test_user_flow_reports_connection_failure(hass):
+    """The flow verifies MeteoGalicia before saving an entry."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        AsyncMock(side_effect=OSError("offline")),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ID_PORT: "1"}
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_user_flow_reports_invalid_response(hass):
+    """Malformed live data is not accepted during setup."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    with patch.object(
+        hass, "async_add_executor_job", AsyncMock(return_value={})
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_ID_PORT: "1"}
+        )
+
+    assert result["errors"] == {"base": "invalid_response"}
+
+
+async def test_options_flow_rejects_out_of_range_custom_interval(hass):
+    """Custom interval values retain the safe bounds."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ID_PORT: "1"})
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: "10"}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_interval"}

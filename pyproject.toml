@@ -8,12 +8,23 @@ dependencies = []
 test = [
   "MeteoGalicia-API==0.1.2",
   "pytest-homeassistant-custom-component==0.13.205",
+  "ruff==0.12.7",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+addopts = "--cov=custom_components.meteogalicia_tides --cov-report=term-missing --cov-fail-under=75"
+
+[tool.coverage.run]
+branch = true
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
 
 [tool.uv]
 package = false

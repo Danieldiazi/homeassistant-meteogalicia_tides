@@ -3,7 +3,6 @@
 ![GitHub Activity](https://img.shields.io/github/commit-activity/m/danieldiazi/homeassistant-meteogalicia_tides?label=commits)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Danieldiazi_homeassistant-meteogalicia_tides&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Danieldiazi_homeassistant-meteogalicia_tides)
 
-# homeassistant-meteogalicia_tides
 MeteoGalicia Tides - Home Assistant Integration 
 
 Esta integración para [Home Assistant](https://www.home-assistant.io/) te permite obtener información de mareas de aquellos puertos de Galicia que sean de tu interés. La información se obtiene de los servicios webs proporcionados por [MeteoGalicia](https://www.meteogalicia.gal/), organismo oficial que tiene entre otros objetivos la predicción meteorológica de Galicia.
@@ -11,13 +10,16 @@ Esta integración para [Home Assistant](https://www.home-assistant.io/) te permi
 
 ## Características
 
-Proporciona los siguientes sensores:
+Por cada puerto crea estas entidades:
 
-- Para un puerto dado
-  - Pronósticos:
-    - Indica cuando será la siguiente marea. (Con información adicional en los atributos del sensor)
-      
-    
+| Entidad | Contenido | Activación inicial |
+| --- | --- | --- |
+| Forecast Tides | Estado histórico con la próxima pleamar o bajamar y sus atributos | Activada |
+| Próxima marea | Fecha y hora de la próxima marea | Desactivada |
+| Tipo de la próxima marea | Pleamar o bajamar en formato estructurado | Desactivada |
+| Altura de la próxima marea | Altura prevista en metros | Desactivada |
+
+La entidad histórica conserva su nombre, estado e identificador único para no romper automatizaciones existentes.
 
 ## Requisitos
 
@@ -37,6 +39,8 @@ Una vez cumplidos los objetivos anteriores, los pasos a seguir para la instalaci
 3. Reiniciar Home Assistant.
 
 4. Añadir la integración desde **Ajustes → Dispositivos y servicios → Añadir integración**, buscar **MeteoGalicia Tides** y seleccionar el puerto por su nombre.
+
+El intervalo predeterminado de las nuevas entradas es de 30 segundos. Puedes modificarlo desde **Ajustes → Dispositivos y servicios → MeteoGalicia Tides → Configurar**, entre 30 segundos y 24 horas.
 
 La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes. Al iniciar Home Assistant, cada puerto configurado en YAML se importará automáticamente a **Dispositivos y servicios**, conservando el mismo identificador único de la entidad. Después de comprobar la importación, puedes retirar ese bloque YAML.
 
@@ -62,23 +66,23 @@ sensor:
 ```
 
 - El parámetro "id_port" es el indicador del puerto y podrás elegir un valor de entre los disponibles por meteogalicia: https://www.meteogalicia.gal/datosred/infoweb/meteo/docs/rss/RSS_Mareas_gl.pdf
-- Con el parámetro opcional "scan_interval" indicas cada cuanto tiempo se conecta a meteogalicia para obtener la información. El valor es en segundos, por tanto, si pones 1200  hará el chequeo cada 20 minutos. Es recomendable usarlo.
+- Con el parámetro opcional `scan_interval` indicas cada cuánto tiempo se conecta a MeteoGalicia. El valor se expresa en segundos; por ejemplo, 1200 equivale a 20 minutos. Al importar YAML, el intervalo se conserva exactamente y posteriormente puede modificarse desde la interfaz.
 
   
 5. Si utilizas YAML, reinicia para que se recargue la configuración y espera unos minutos a que aparezca la entidad.
 
-La entidad histórica mantiene su identificador único y su estado para no romper automatizaciones existentes. La integración también crea, deshabilitados por defecto, sensores estructurados para la fecha y hora, el tipo y la altura de la próxima marea. Puedes habilitarlos desde la página del dispositivo.
+La integración ofrece además **Descargar diagnósticos** desde el menú de la entrada. El archivo incluye el estado del coordinador y un resumen de la respuesta, pero no las coordenadas devueltas por la API.
 
 No configures el mismo puerto simultáneamente mediante la interfaz y YAML.
 
 
 ## FAQ
 
-###### ClientConnectorError
-Aparece el mensaje "[custom_components.meteogalicia_tides.sensor] [ClientConnectorError] Cannot connect to host servizos.meteogalicia.gal:443 ssl:default [Try again]* -> Lo más probable es que en ese momento no tuvieses acceso a internet desde tu Home Assistant.¡
+###### La integración aparece como no disponible
+El coordinador marca las entidades como no disponibles cuando MeteoGalicia no responde, devuelve contenido vacío o proporciona una respuesta inválida. Home Assistant volverá a intentarlo en el siguiente intervalo.
 
 ###### TimeoutError
-Si aparece el mensaje *Couldn't update sensor (TimeoutError)* o *Still no update available (TimeoutError)* en este caso es un problema con el servicio web de meteogalicia, en ese momento puntual no habrá podido servir la petición.
+Si aparece el mensaje *MeteoGalicia request timed out*, el servicio no respondió antes de 60 segundos. Revisa la conexión y espera al siguiente intento.
 
-###### Possible API connection problem. Currently unable to download data from MeteoGalicia. Maybe next time...
-En este caso es que ha tratado de conectarse al servicio web de meteogalicia y ha devuelto contenido vacio. 
+###### Respuesta vacía o inválida
+Los mensajes *returned no data* e *invalid response* diferencian una respuesta vacía de una respuesta que no contiene ninguna marea utilizable.

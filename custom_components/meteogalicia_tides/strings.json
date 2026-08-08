@@ -16,6 +16,17 @@
       "already_configured": "This port is already configured"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update interval",
+        "description": "Choose how often MeteoGalicia is queried.",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "next_tide_time": {

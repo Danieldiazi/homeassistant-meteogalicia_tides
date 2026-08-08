@@ -16,6 +16,17 @@
       "already_configured": "Este puerto ya está configurado"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Intervalo de actualización",
+        "description": "Elige cada cuánto tiempo se consulta MeteoGalicia.",
+        "data": {
+          "scan_interval": "Intervalo de actualización (segundos)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "next_tide_time": {"name": "Próxima marea"},

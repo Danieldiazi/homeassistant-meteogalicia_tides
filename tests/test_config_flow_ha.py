@@ -6,7 +6,11 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.meteogalicia_tides.const import CONF_ID_PORT, DOMAIN
+from custom_components.meteogalicia_tides.const import (
+    CONF_ID_PORT,
+    CONF_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 
 async def test_user_flow_creates_port_entry(hass):
@@ -58,18 +62,21 @@ async def test_yaml_import_creates_entry_and_normalizes_id(hass):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": config_entries.SOURCE_IMPORT},
-            data={CONF_ID_PORT: "03"},
+            data={CONF_ID_PORT: "03", CONF_SCAN_INTERVAL: 1800},
         )
         await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Vigo"
-    assert result["data"] == {CONF_ID_PORT: "3"}
+    assert result["data"] == {
+        CONF_ID_PORT: "3",
+        CONF_SCAN_INTERVAL: 1800,
+    }
     assert result["result"].unique_id == "3"
 
 
 async def test_yaml_import_rejects_duplicate_port(hass):
-    """Repeated YAML imports do not create duplicate entries."""
+    """Repeated YAML imports update the interval without duplicating."""
     entry = MockConfigEntry(
         domain=DOMAIN, unique_id="3", data={CONF_ID_PORT: "3"}
     )
@@ -78,8 +85,27 @@ async def test_yaml_import_rejects_duplicate_port(hass):
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
         context={"source": config_entries.SOURCE_IMPORT},
-        data={CONF_ID_PORT: "3"},
+        data={CONF_ID_PORT: "3", CONF_SCAN_INTERVAL: 1700},
     )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
+    assert entry.data == {
+        CONF_ID_PORT: "3",
+        CONF_SCAN_INTERVAL: 1700,
+    }
+
+
+async def test_options_flow_updates_scan_interval(hass):
+    """The polling interval can be changed without replacing the entry."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ID_PORT: "1"})
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: 1800}
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options == {CONF_SCAN_INTERVAL: 1800}

@@ -1,14 +1,13 @@
 """Tests for tide selection helpers."""
 
-from datetime import datetime
 import unittest
+from datetime import datetime
 
 from custom_components.meteogalicia_tides.tide import (
     get_next_tide,
     get_next_tide_with_day,
     get_state_from_tide,
 )
-
 
 TODAY = [
     {"@id": "10", "@hora": "01:00", "@idTipoMarea": "1"},

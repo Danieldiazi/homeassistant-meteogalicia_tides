@@ -1,10 +1,10 @@
 """Sensor platform for the MeteoGalicia Tides integration."""
 
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
-import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     SensorDeviceClass,
@@ -54,12 +54,17 @@ async def async_setup_platform(
     hass, config, add_entities, discovery_info=None
 ):  # pylint: disable=missing-docstring, unused-argument
     """Import legacy YAML configuration into a config entry."""
-    hass.async_create_task(
-        hass.config_entries.flow.async_init(
-            const.DOMAIN,
-            context={"source": SOURCE_IMPORT},
-            data={const.CONF_ID_PORT: config[const.CONF_ID_PORT]},
+    import_data = {const.CONF_ID_PORT: config[const.CONF_ID_PORT]}
+    if scan_interval := config.get(const.CONF_SCAN_INTERVAL):
+        import_data[const.CONF_SCAN_INTERVAL] = int(
+            scan_interval.total_seconds()
+            if isinstance(scan_interval, timedelta)
+            else scan_interval
         )
+    await hass.config_entries.flow.async_init(
+        const.DOMAIN,
+        context={"source": SOURCE_IMPORT},
+        data=import_data,
     )
 
 
@@ -69,7 +74,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up sensors from a config entry."""
-    coordinator = hass.data[const.DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities(_create_entities(entry.data[const.CONF_ID_PORT], coordinator))
 
 
@@ -116,7 +121,8 @@ class MeteoGaliciaForecastTide(
         if response is None:
             self._state = None
             _LOGGER.debug(
-                "[%s] Possible API connection problem. Currently unable to download data from MeteoGalicia",
+                "[%s] Possible API connection problem. Currently unable to "
+                "download data from MeteoGalicia",
                 self.id,
             )
             return None

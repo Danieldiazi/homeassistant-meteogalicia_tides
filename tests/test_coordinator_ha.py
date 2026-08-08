@@ -114,3 +114,27 @@ async def test_coordinator_reports_unexpected_error(hass):
     ):
         with pytest.raises(UpdateFailed, match="client failure"):
             await coordinator._async_update_data()
+
+    assert coordinator.consecutive_failures == 1
+    assert coordinator.last_failure_reason.endswith("client failure")
+    assert coordinator.update_interval.total_seconds() == 60
+
+
+async def test_coordinator_restores_interval_after_success(hass):
+    """A successful request clears backoff and failure diagnostics."""
+    coordinator = MeteoGaliciaTidesCoordinator(hass, "1")
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        AsyncMock(side_effect=[OSError("offline"), VALID_RESPONSE]),
+    ):
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+        assert await coordinator._async_update_data() == VALID_RESPONSE
+
+    assert coordinator.consecutive_failures == 0
+    assert coordinator.last_failure_reason is None
+    assert coordinator.last_success is not None
+    assert coordinator.last_attempt is not None
+    assert coordinator.last_request_duration >= 0
+    assert coordinator.update_interval.total_seconds() == 30

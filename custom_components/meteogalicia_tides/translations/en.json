@@ -10,13 +10,17 @@
       }
     },
     "error": {
-      "invalid_port": "Select a valid port"
+      "invalid_port": "Select a valid port",
+      "cannot_connect": "Unable to connect to MeteoGalicia",
+      "invalid_response": "MeteoGalicia returned invalid tide data",
+      "unknown": "Unexpected error"
     },
     "abort": {
       "already_configured": "This port is already configured"
     }
   },
   "options": {
+    "error": {"invalid_interval": "Enter a value between 30 and 86400 seconds"},
     "step": {
       "init": {
         "title": "Update interval",
@@ -30,8 +34,18 @@
   "entity": {
     "sensor": {
       "next_tide_time": {"name": "Next tide"},
-      "next_tide_type": {"name": "Next tide type"},
-      "next_tide_height": {"name": "Next tide height"}
+      "next_tide_type": {"name": "Next tide type", "state": {"high": "High tide", "low": "Low tide"}},
+      "next_tide_height": {"name": "Next tide height"},
+      "next_high_tide": {"name": "Next high tide"},
+      "next_low_tide": {"name": "Next low tide"},
+      "second_next_tide": {"name": "Following tide"},
+      "today_tide_count": {"name": "Today's tide count"}
+    }
+  },
+  "issues": {
+    "remove_yaml": {
+      "title": "Remove the migrated MeteoGalicia Tides YAML",
+      "description": "Port {port} has been migrated to the UI. Remove its `meteogalicia_tides` sensor configuration from `configuration.yaml` and restart Home Assistant to prevent this notice from returning."
     }
   }
 }

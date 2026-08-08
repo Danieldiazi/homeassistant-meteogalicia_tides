@@ -2,8 +2,11 @@
 import asyncio
 import logging
 from collections.abc import Mapping
+from datetime import timedelta
+from time import monotonic
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 from meteogalicia_api.interface import MeteoGalicia
 
 from . import const
@@ -21,26 +24,68 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
             update_interval=update_interval or const.DEFAULT_UPDATE_INTERVAL,
         )
         self.id_port = id_port
+        self.configured_update_interval = (
+            update_interval or const.DEFAULT_UPDATE_INTERVAL
+        )
+        self.consecutive_failures = 0
+        self.last_attempt = None
+        self.last_success = None
+        self.last_request_duration = None
+        self.last_failure_reason = None
 
     async def _async_update_data(self):
         """Fetch data from the MeteoGalicia API."""
+        self.last_attempt = dt_util.utcnow()
+        started = monotonic()
         try:
             async with asyncio.timeout(const.TIMEOUT):
                 response = await self.hass.async_add_executor_job(
                     _get_forecast_tide_data_from_api, self.id_port
                 )
         except TimeoutError as err:
-            raise UpdateFailed(
+            message = (
                 f"MeteoGalicia request timed out after {const.TIMEOUT} seconds"
-            ) from err
+            )
+            self._record_failure(message, started)
+            raise UpdateFailed(message) from err
         except Exception as err:
-            raise UpdateFailed(f"Unexpected MeteoGalicia API error: {err}") from err
+            message = f"Unexpected MeteoGalicia API error: {err}"
+            self._record_failure(message, started)
+            raise UpdateFailed(message) from err
 
         if response is None:
-            raise UpdateFailed("MeteoGalicia API returned no data")
+            message = "MeteoGalicia API returned no data"
+            self._record_failure(message, started)
+            raise UpdateFailed(message)
         if not _is_valid_response(response):
-            raise UpdateFailed("MeteoGalicia API returned an invalid response")
+            message = "MeteoGalicia API returned an invalid response"
+            self._record_failure(message, started)
+            raise UpdateFailed(message)
+        self._record_success(started)
         return response
+
+    def _record_success(self, started):
+        """Record a successful request and restore the configured cadence."""
+        self.last_request_duration = monotonic() - started
+        self.last_success = dt_util.utcnow()
+        self.last_failure_reason = None
+        self.consecutive_failures = 0
+        self.update_interval = self.configured_update_interval
+
+    def _record_failure(self, reason, started):
+        """Record a failure and progressively reduce request frequency."""
+        self.last_request_duration = monotonic() - started
+        self.last_failure_reason = reason
+        self.consecutive_failures += 1
+        multiplier = min(
+            2**self.consecutive_failures, const.MAX_BACKOFF_MULTIPLIER
+        )
+        self.update_interval = timedelta(
+            seconds=min(
+                self.configured_update_interval.total_seconds() * multiplier,
+                const.MAX_SCAN_INTERVAL,
+            )
+        )
 
 
 def _get_forecast_tide_data_from_api(id_port):

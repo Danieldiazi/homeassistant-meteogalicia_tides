@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import UnitOfLength
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -40,12 +41,38 @@ NEXT_TIDE_TIME_DESCRIPTION = SensorEntityDescription(
 TIDE_TYPE_DESCRIPTION = SensorEntityDescription(
     key="next_tide_type",
     translation_key="next_tide_type",
+    device_class=SensorDeviceClass.ENUM,
+    options=["high", "low"],
     entity_registry_enabled_default=False,
 )
 TIDE_HEIGHT_DESCRIPTION = SensorEntityDescription(
     key="next_tide_height",
     translation_key="next_tide_height",
     native_unit_of_measurement=UnitOfLength.METERS,
+    entity_registry_enabled_default=False,
+)
+NEXT_HIGH_TIDE_DESCRIPTION = SensorEntityDescription(
+    key="next_high_tide",
+    translation_key="next_high_tide",
+    device_class=SensorDeviceClass.TIMESTAMP,
+    entity_registry_enabled_default=False,
+)
+NEXT_LOW_TIDE_DESCRIPTION = SensorEntityDescription(
+    key="next_low_tide",
+    translation_key="next_low_tide",
+    device_class=SensorDeviceClass.TIMESTAMP,
+    entity_registry_enabled_default=False,
+)
+SECOND_NEXT_TIDE_DESCRIPTION = SensorEntityDescription(
+    key="second_next_tide",
+    translation_key="second_next_tide",
+    device_class=SensorDeviceClass.TIMESTAMP,
+    entity_registry_enabled_default=False,
+)
+TODAY_TIDE_COUNT_DESCRIPTION = SensorEntityDescription(
+    key="today_tide_count",
+    translation_key="today_tide_count",
+    icon="mdi:counter",
     entity_registry_enabled_default=False,
 )
 
@@ -61,11 +88,24 @@ async def async_setup_platform(
             if isinstance(scan_interval, timedelta)
             else scan_interval
         )
-    await hass.config_entries.flow.async_init(
+    result = await hass.config_entries.flow.async_init(
         const.DOMAIN,
         context={"source": SOURCE_IMPORT},
         data=import_data,
     )
+    if result["type"] in {"create_entry", "abort"}:
+        ir.async_create_issue(
+            hass,
+            const.DOMAIN,
+            f"remove_yaml_{import_data[const.CONF_ID_PORT]}",
+            is_fixable=False,
+            is_persistent=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="remove_yaml",
+            translation_placeholders={
+                "port": str(import_data[const.CONF_ID_PORT])
+            },
+        )
 
 
 async def async_setup_entry(
@@ -85,6 +125,18 @@ def _create_entities(id_port, coordinator):
         MeteoGaliciaTideTimeSensor(id_port, coordinator, NEXT_TIDE_TIME_DESCRIPTION),
         MeteoGaliciaTideTypeSensor(id_port, coordinator, TIDE_TYPE_DESCRIPTION),
         MeteoGaliciaTideHeightSensor(id_port, coordinator, TIDE_HEIGHT_DESCRIPTION),
+        MeteoGaliciaFilteredTideTimeSensor(
+            id_port, coordinator, NEXT_HIGH_TIDE_DESCRIPTION, tide_type=1
+        ),
+        MeteoGaliciaFilteredTideTimeSensor(
+            id_port, coordinator, NEXT_LOW_TIDE_DESCRIPTION, tide_type=0
+        ),
+        MeteoGaliciaFilteredTideTimeSensor(
+            id_port, coordinator, SECOND_NEXT_TIDE_DESCRIPTION, position=1
+        ),
+        MeteoGaliciaTodayTideCountSensor(
+            id_port, coordinator, TODAY_TIDE_COUNT_DESCRIPTION
+        ),
     ]
 
 
@@ -303,6 +355,81 @@ class MeteoGaliciaTideHeightSensor(MeteoGaliciaTideSensorBase):
             return float(str(tide.get(const.ALTURA_FIELD)).replace(",", "."))
         except (TypeError, ValueError):
             return None
+
+
+class MeteoGaliciaFilteredTideTimeSensor(MeteoGaliciaTideSensorBase):
+    """Timestamp for a selected upcoming tide."""
+
+    def __init__(
+        self, id_port, coordinator, description, tide_type=None, position=0
+    ):
+        super().__init__(id_port, coordinator, description)
+        self.tide_type = tide_type
+        self.position = position
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the selected upcoming tide timestamp."""
+        current = dt.now()
+        candidates = _upcoming_tides(self.coordinator.data or {}, current)
+        if self.tide_type is not None:
+            candidates = [
+                item
+                for item in candidates
+                if _tide_type(item[0]) == self.tide_type
+            ]
+        if len(candidates) <= self.position:
+            return None
+        tide, is_tomorrow = candidates[self.position]
+        return _tide_datetime(tide, is_tomorrow, current)
+
+
+class MeteoGaliciaTodayTideCountSensor(MeteoGaliciaTideSensorBase):
+    """Number of tides included in today's forecast."""
+
+    @property
+    def native_value(self) -> int:
+        """Return today's tide count."""
+        tides = (self.coordinator.data or {}).get("todayTides")
+        return len(tides) if isinstance(tides, list) else 0
+
+
+def _upcoming_tides(data, current):
+    """Return upcoming tides ordered by local timestamp."""
+    candidates = [(tide, False) for tide in data.get("todayTides") or []]
+    if tomorrow := data.get("tomorrowFirstTide"):
+        candidates.append((tomorrow, True))
+    dated = [
+        (tide, is_tomorrow, _tide_datetime(tide, is_tomorrow, current))
+        for tide, is_tomorrow in candidates
+    ]
+    return [
+        (tide, is_tomorrow)
+        for tide, is_tomorrow, timestamp in sorted(
+            (item for item in dated if item[2] and item[2] >= current),
+            key=lambda item: item[2],
+        )
+    ]
+
+
+def _tide_datetime(tide, is_tomorrow, current):
+    """Convert an API tide hour to a timezone-aware timestamp."""
+    try:
+        hour, minute = (int(value) for value in tide[const.HORA_FIELD].split(":", 1))
+        tide_date = current.date() + timedelta(days=int(is_tomorrow))
+        return datetime.combine(
+            tide_date, datetime.min.time(), tzinfo=current.tzinfo
+        ).replace(hour=hour, minute=minute)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _tide_type(tide):
+    """Return the numeric tide type or None."""
+    try:
+        return int(tide[const.ID_TIPO_MAREA_FIELD])
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def _device_info(id_port, port_name) -> DeviceInfo:

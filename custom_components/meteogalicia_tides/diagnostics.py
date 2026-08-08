@@ -1,5 +1,6 @@
 """Diagnostics for MeteoGalicia Tides."""
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -37,7 +38,16 @@ async def async_get_config_entry_diagnostics(
                 else None
             ),
             "response_type": type(data).__name__,
+            "last_attempt": _as_isoformat(coordinator.last_attempt),
+            "last_success": _as_isoformat(coordinator.last_success),
+            "last_request_duration_seconds": coordinator.last_request_duration,
+            "last_failure_reason": coordinator.last_failure_reason,
+            "consecutive_failures": coordinator.consecutive_failures,
+            "effective_update_interval_seconds": (
+                coordinator.update_interval.total_seconds()
+            ),
         },
+        "library": {"meteogalicia_api_version": _api_version()},
         "response": {
             "port_name": response.get("portName"),
             "forecast_date": response.get("date"),
@@ -49,3 +59,16 @@ async def async_get_config_entry_diagnostics(
             ),
         },
     }
+
+
+def _api_version() -> str:
+    """Return the installed API client version."""
+    try:
+        return version("MeteoGalicia-API")
+    except PackageNotFoundError:
+        return "unknown"
+
+
+def _as_isoformat(value) -> str | None:
+    """Return a diagnostics-safe timestamp."""
+    return value.isoformat() if value is not None else None

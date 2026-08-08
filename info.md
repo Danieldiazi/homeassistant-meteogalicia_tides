@@ -5,6 +5,8 @@
 
 **configuration.yaml:**
 
+The integration can now be added from **Settings → Devices & services → Add integration**. Existing YAML configurations remain supported.
+
 ```yaml
 sensor:
   platform: meteogalicia_tides
@@ -32,7 +34,8 @@ key | description
 **platform (Required)** | The platform name: "meteogalicia_tides".  
 **id_port (Required)** | The ID port by MeteoGalicia.  List available at: https://www.meteogalicia.gal/datosred/infoweb/meteo/docs/rss/RSS_Mareas_gl.pdf
 **scan_interval (Optional)** | Interval in seconds to poll new data from meteogalicia webservice.  Recommended.
+
+The historical forecast sensor keeps its existing unique ID and state. Additional timestamp, tide type, and height sensors are created disabled by default and can be enabled from the device page.
   
    
-
 

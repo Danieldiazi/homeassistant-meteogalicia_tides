@@ -16,5 +16,5 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements_test.txt
+      - run: pip install --only-binary=:all: -r requirements_test.txt
       - run: pytest

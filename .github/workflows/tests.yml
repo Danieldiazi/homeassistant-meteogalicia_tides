@@ -20,9 +20,6 @@ jobs:
         with:
           version: "0.12.3"
           enable-cache: true
-      # Home Assistant has test-only transitive dependencies without wheels.
-      # Every resolved source archive and hash is fixed in uv.lock.
-      - run: uv sync --frozen --group test # NOSONAR -- reviewed locked test environment
       - run: uv run --frozen ruff check .
       - run: uv run --frozen pytest -v
 

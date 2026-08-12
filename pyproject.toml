@@ -1,14 +1,14 @@
 [project]
 name = "homeassistant-meteogalicia-tides-tests"
 version = "0.0.0"
-requires-python = ">=3.13.2,<3.15"
+requires-python = ">=3.14.2,<3.15"
 dependencies = []
 
 [dependency-groups]
 test = [
   "MeteoGalicia-API==0.1.2",
   "pycares==5.0.1",
-  "pytest-homeassistant-custom-component==0.13.316",
+  "pytest-homeassistant-custom-component==0.13.355",
   "ruff==0.16.1",
 ]
 
@@ -22,7 +22,7 @@ addopts = "--cov=custom_components.meteogalicia_tides --cov-report=term-missing 
 branch = true
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]

@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - pyproject.toml
+      - .github/workflows/dependency-lock.yml
 
 concurrency:
   group: dependency-lock-refresh

@@ -3,11 +3,18 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns:
+          - "*"
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
     groups:
       test-dependencies:
         patterns:

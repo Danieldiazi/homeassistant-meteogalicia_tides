@@ -9,7 +9,7 @@ test = [
   "MeteoGalicia-API==0.1.2",
   "pycares==5.0.1",
   "pytest-homeassistant-custom-component==0.13.355",
-  "ruff==0.16.1",
+  "ruff==0.16.2",
 ]
 
 [tool.pytest.ini_options]

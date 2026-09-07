@@ -8,8 +8,8 @@ dependencies = []
 test = [
   "MeteoGalicia-API==0.1.2",
   "pycares==5.0.1",
-  "pytest-homeassistant-custom-component==0.13.355",
-  "ruff==0.16.2",
+  "pytest-homeassistant-custom-component==0.13.363",
+  "ruff==0.16.6",
 ]
 
 [tool.pytest.ini_options]

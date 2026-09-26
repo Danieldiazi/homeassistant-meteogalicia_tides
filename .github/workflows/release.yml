@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     branches: ["publish/*"]
+  release:
+    types: [published]
 
 permissions:
   contents: write
@@ -19,13 +21,28 @@ jobs:
         id: release
         shell: bash
         run: |
-          release_tag="${GITHUB_REF_NAME#publish/}"
-          manifest_version="$(python -c 'import json; print(json.load(open("custom_components/meteogalicia_tides/manifest.json"))["version"])')"
-          if [[ "${release_tag#v}" != "$manifest_version" ]]; then
-            echo "Manifest version $manifest_version does not match release $release_tag" >&2
-            exit 1
-          fi
-          echo "tag=$release_tag" >> "$GITHUB_OUTPUT"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          release_tag = os.environ["GITHUB_REF_NAME"].removeprefix("publish/")
+          manifest_path = Path("custom_components/meteogalicia_tides/manifest.json")
+          manifest_version = json.loads(manifest_path.read_text(encoding="utf-8"))["version"]
+
+          def normalized(version):
+              return tuple(
+                  int(part) if part.isdigit() else part
+                  for part in version.removeprefix("v").split(".")
+              )
+
+          if normalized(release_tag) != normalized(manifest_version):
+              raise SystemExit(
+                  f"Manifest version {manifest_version} does not match release {release_tag}"
+              )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"tag={release_tag}\n")
+          PY
 
       - name: Create HACS zip
         run: |
@@ -38,4 +55,5 @@ jobs:
           tag_name: ${{ steps.release.outputs.tag }}
           target_commitish: ${{ github.sha }}
           files: homeassistant-meteogalicia_tides.zip
+          fail_on_unmatched_files: true
           generate_release_notes: true

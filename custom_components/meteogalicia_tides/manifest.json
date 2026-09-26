@@ -12,6 +12,6 @@
   "issue_tracker": "https://github.com/Danieldiazi/homeassistant-meteogalicia_tides/issues",
   "requirements": ["MeteoGalicia-API==0.1.7"],
   "ssdp": [],
-  "version": "2026.9.3",
+  "version": "2026.9.4",
   "zeroconf": []
 }

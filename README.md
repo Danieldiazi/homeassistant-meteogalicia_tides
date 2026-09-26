@@ -31,6 +31,9 @@ Para instalar esta integración en Home Assistant necesitarás:
 
 * una instalación de Home Assistant (ver <https://www.home-assistant.io/>)
 * tener HACS en tu entorno de Home Assistant (ver <https://hacs.xyz/>)
+* `MeteoGalicia-API` es instalada automáticamente por Home Assistant. Esta integración
+  mantiene la misma versión de la dependencia que `homeassistant-meteogalicia` para
+  evitar conflictos si ambas integraciones están instaladas simultáneamente.
 
 
 ## Instalación

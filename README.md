@@ -92,3 +92,18 @@ Si aparece el mensaje *MeteoGalicia request timed out*, el servicio no respondi�
 
 ###### Respuesta vacía o inválida
 Los mensajes *returned no data* e *invalid response* diferencian una respuesta vacía de una respuesta que no contiene ninguna marea utilizable.
+
+## Publicación de versiones
+
+HACS descarga `homeassistant-meteogalicia_tides.zip` desde los assets de cada release.
+Los archivos automáticos «Source code» de GitHub no sustituyen ese ZIP.
+
+1. Actualiza la versión y las dependencias en `custom_components/meteogalicia_tides/manifest.json`.
+2. Publica en GitHub una release con una etiqueta que corresponda a esa versión.
+   Se admite el prefijo `v` y ceros iniciales: `v2026.09.0` corresponde a `2026.9.0`.
+3. Espera a que la acción **Release** termine y comprueba que el ZIP aparece en los assets
+   antes de actualizar desde HACS.
+
+También se mantiene el método de crear una rama `publish/<etiqueta>` desde el commit
+que se quiere publicar. Si la release ya existe, la acción adjunta el ZIP a esa release.
+Si falla, revisa el log de **Release** y vuelve a ejecutar el job después de resolver la causa.

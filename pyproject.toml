@@ -6,10 +6,10 @@ dependencies = []
 
 [dependency-groups]
 test = [
-  "MeteoGalicia-API==0.1.2",
+  "MeteoGalicia-API==0.1.7",
   "pycares==5.0.1",
-  "pytest-homeassistant-custom-component==0.13.366",
-  "ruff==0.16.9",
+  "pytest-homeassistant-custom-component==0.13.368",
+  "ruff==0.16.10",
 ]
 
 [tool.pytest.ini_options]

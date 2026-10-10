@@ -86,7 +86,7 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 response = await self.hass.async_add_executor_job(
                     _get_forecast_tide_data_from_api, id_port
                 )
-        except TimeoutError, OSError:
+        except OSError:
             errors["base"] = "cannot_connect"
         except Exception:  # noqa: BLE001
             errors["base"] = "unknown"

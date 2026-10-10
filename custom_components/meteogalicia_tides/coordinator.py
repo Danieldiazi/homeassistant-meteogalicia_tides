@@ -4,6 +4,7 @@ import asyncio
 import logging
 from collections.abc import Mapping
 from datetime import datetime, timedelta
+from math import isfinite
 from threading import Lock
 from time import monotonic
 
@@ -13,6 +14,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
+from meteogalicia_api.errors import MeteoGaliciaError
 from meteogalicia_api.interface import MeteoGalicia
 
 from . import const
@@ -40,15 +42,29 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.last_success = None
         self.last_request_duration = None
         self.last_failure_reason = None
+        self.last_failure_kind = None
         self._unsub_transition = None
         self._transition_listeners = 0
         self._session = requests.Session()
-        self._client = MeteoGalicia(session=self._session, timeout=const.TIMEOUT)
+        self._client = MeteoGalicia(
+            session=self._session, timeout=const.TIMEOUT, raise_on_error=True
+        )
         self._session_lock = Lock()
         self._closed = False
         self._unsub_session_shutdown = hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP, self._async_stop
         )
+
+    @property
+    def data_age_seconds(self):
+        """Age of the RSS publication, independently of successful downloads."""
+        value = (self.data or {}).get("date")
+        if not isinstance(value, str):
+            return None
+        timestamp = dt_util.parse_datetime(value)
+        if timestamp is None or timestamp.tzinfo is None:
+            return None
+        return round(max(0.0, (dt_util.utcnow() - timestamp).total_seconds()), 1)
 
     async def _async_stop(self, _event):
         self._unsub_session_shutdown = None
@@ -151,8 +167,13 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
                 response = await self.hass.async_add_executor_job(self._get_forecast)
         except TimeoutError as err:
             message = f"MeteoGalicia request timed out after {const.TIMEOUT} seconds"
-            self._record_failure(message, started)
+            self._record_failure(message, started, kind="timeout")
             raise UpdateFailed(message) from err
+        except MeteoGaliciaError as err:
+            self._record_failure(
+                str(err), started, kind=err.kind, retry_after=err.retry_after
+            )
+            raise UpdateFailed(str(err)) from err
         except Exception as err:
             message = f"Unexpected MeteoGalicia API error: {err}"
             self._record_failure(message, started)
@@ -181,18 +202,25 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.last_request_duration = monotonic() - started
         self.last_success = dt_util.utcnow()
         self.last_failure_reason = None
+        self.last_failure_kind = None
         self.consecutive_failures = 0
         self.update_interval = self.configured_update_interval
 
-    def _record_failure(self, reason, started):
+    def _record_failure(
+        self, reason, started, kind="invalid_response", retry_after=None
+    ):
         """Record a failure and progressively reduce request frequency."""
         self.last_request_duration = monotonic() - started
         self.last_failure_reason = reason
+        self.last_failure_kind = kind
         self.consecutive_failures += 1
         multiplier = min(2**self.consecutive_failures, const.MAX_BACKOFF_MULTIPLIER)
         self.update_interval = timedelta(
             seconds=min(
-                self.configured_update_interval.total_seconds() * multiplier,
+                max(
+                    self.configured_update_interval.total_seconds() * multiplier,
+                    retry_after or 0,
+                ),
                 const.MAX_SCAN_INTERVAL,
             )
         )
@@ -237,7 +265,12 @@ def _is_valid_tide(tide):
         return False
     try:
         hour, minute = (int(value) for value in tide_time.split(":", 1))
-        int(tide[const.ID_TIPO_MAREA_FIELD])
+        if str(tide[const.ID_TIPO_MAREA_FIELD]).strip() not in {"0", "1"}:
+            return False
+        if const.ALTURA_FIELD in tide and not isfinite(
+            float(str(tide[const.ALTURA_FIELD]).replace(",", "."))
+        ):
+            return False
     except KeyError, TypeError, ValueError:
         return False
     return 0 <= hour <= 23 and 0 <= minute <= 59

@@ -42,6 +42,8 @@ async def async_get_config_entry_diagnostics(
             "last_success": _as_isoformat(coordinator.last_success),
             "last_request_duration_seconds": coordinator.last_request_duration,
             "last_failure_reason": coordinator.last_failure_reason,
+            "last_failure_kind": coordinator.last_failure_kind,
+            "data_age_seconds": coordinator.data_age_seconds,
             "consecutive_failures": coordinator.consecutive_failures,
             "effective_update_interval_seconds": (
                 coordinator.update_interval.total_seconds()

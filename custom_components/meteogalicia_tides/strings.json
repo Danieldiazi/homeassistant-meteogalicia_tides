@@ -4,7 +4,9 @@
       "reconfigure": {
         "title": "Change tide port",
         "description": "Select the new port. Changing ports replaces the previous entities and device. Review automations that use them. The update interval is preserved.",
-        "data": {"id_port": "Port"}
+        "data": {
+          "id_port": "Port"
+        }
       },
       "user": {
         "title": "Add a MeteoGalicia tide port",
@@ -46,7 +48,10 @@
       },
       "next_tide_type": {
         "name": "Next tide type",
-        "state": {"high": "High tide", "low": "Low tide"}
+        "state": {
+          "high": "High tide",
+          "low": "Low tide"
+        }
       },
       "next_tide_height": {
         "name": "Next tide height"
@@ -62,6 +67,15 @@
       },
       "today_tide_count": {
         "name": "Today's tide count"
+      },
+      "health_last_success": {
+        "name": "Last successful connection"
+      },
+      "health_data_age": {
+        "name": "Data age"
+      },
+      "health_failures": {
+        "name": "Consecutive failures"
       }
     }
   },

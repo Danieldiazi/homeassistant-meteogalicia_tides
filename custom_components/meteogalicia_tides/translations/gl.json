@@ -4,7 +4,9 @@
       "reconfigure": {
         "title": "Cambiar o porto de mareas",
         "description": "Selecciona o novo porto. Cambiar de porto substitúe as entidades e o dispositivo anteriores. Revisa as automatizacións que os utilicen. Consérvase o intervalo de actualización.",
-        "data": {"id_port": "Porto"}
+        "data": {
+          "id_port": "Porto"
+        }
       },
       "user": {
         "title": "Engadir un porto de mareas de MeteoGalicia",
@@ -26,7 +28,9 @@
     }
   },
   "options": {
-    "error": {"invalid_interval": "Introduce un valor entre 30 e 86400 segundos"},
+    "error": {
+      "invalid_interval": "Introduce un valor entre 30 e 86400 segundos"
+    },
     "step": {
       "init": {
         "title": "Intervalo de actualización",
@@ -39,13 +43,40 @@
   },
   "entity": {
     "sensor": {
-      "next_tide_time": {"name": "Próxima marea"},
-      "next_tide_type": {"name": "Tipo da próxima marea", "state": {"high": "Preamar", "low": "Baixamar"}},
-      "next_tide_height": {"name": "Altura da próxima marea"},
-      "next_high_tide": {"name": "Próxima preamar"},
-      "next_low_tide": {"name": "Próxima baixamar"},
-      "second_next_tide": {"name": "Marea seguinte"},
-      "today_tide_count": {"name": "Número de mareas de hoxe"}
+      "next_tide_time": {
+        "name": "Próxima marea"
+      },
+      "next_tide_type": {
+        "name": "Tipo da próxima marea",
+        "state": {
+          "high": "Preamar",
+          "low": "Baixamar"
+        }
+      },
+      "next_tide_height": {
+        "name": "Altura da próxima marea"
+      },
+      "next_high_tide": {
+        "name": "Próxima preamar"
+      },
+      "next_low_tide": {
+        "name": "Próxima baixamar"
+      },
+      "second_next_tide": {
+        "name": "Marea seguinte"
+      },
+      "today_tide_count": {
+        "name": "Número de mareas de hoxe"
+      },
+      "health_last_success": {
+        "name": "Última conexión correcta"
+      },
+      "health_data_age": {
+        "name": "Antigüidade dos datos"
+      },
+      "health_failures": {
+        "name": "Fallos consecutivos"
+      }
     }
   },
   "issues": {

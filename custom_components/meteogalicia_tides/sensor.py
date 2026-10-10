@@ -2,6 +2,7 @@
 
 import logging
 from datetime import timedelta
+from math import isfinite
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -21,6 +22,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt
 
 from . import const
+from .health import create_health_sensors
 from .tide import TIDE_TIME_ZONE, get_state_from_tide, tides_on_day, upcoming_tides
 
 _LOGGER = logging.getLogger(__name__)
@@ -131,7 +133,11 @@ def _create_entities(id_port, coordinator):
         MeteoGaliciaTodayTideCountSensor(
             id_port, coordinator, TODAY_TIDE_COUNT_DESCRIPTION
         ),
-    ]
+    ] + create_health_sensors(
+        coordinator,
+        f"{const.DOMAIN}_{id_port}",
+        _device_info(id_port, (coordinator.data or {}).get("portName") or str(id_port)),
+    )
 
 
 class MeteoGaliciaForecastTide(CoordinatorEntity, SensorEntity):
@@ -239,7 +245,8 @@ class MeteoGaliciaTideHeightSensor(MeteoGaliciaTideSensorBase):
         if not tide:
             return None
         try:
-            return float(str(tide.get(const.ALTURA_FIELD)).replace(",", "."))
+            height = float(str(tide.get(const.ALTURA_FIELD)).replace(",", "."))
+            return height if isfinite(height) else None
         except TypeError, ValueError:
             return None
 

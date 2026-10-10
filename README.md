@@ -109,7 +109,7 @@ Los mensajes *returned no data* e *invalid response* diferencian una respuesta v
 Antes de publicar, aumenta `version` en el manifiesto si cambia la integración.
 Las comprobaciones del PR y de publicación validan la versión, la disponibilidad
 en PyPI de la dependencia fijada y el contenido del ZIP para HACS. Las dos
-integraciones utilizan la API `0.1.9`, ya publicada y comprobada en sus pruebas.
+integraciones utilizan la API `0.1.10`, ya publicada y comprobada en sus pruebas.
 
 HACS descarga `homeassistant-meteogalicia_tides.zip` desde los assets de cada release.
 Los archivos automáticos «Source code» de GitHub no sustituyen ese ZIP.
@@ -123,3 +123,12 @@ Los archivos automáticos «Source code» de GitHub no sustituyen ese ZIP.
 También se mantiene el método de crear una rama `publish/<etiqueta>` desde el commit
 que se quiere publicar. Si la release ya existe, la acción adjunta el ZIP a esa release.
 Si falla, revisa el log de **Release** y vuelve a ejecutar el job después de resolver la causa.
+
+## Diagnóstico de conexión
+
+Puedes habilitar tres sensores de diagnóstico desde las entidades del dispositivo:
+última conexión correcta, antigüedad real de los datos y fallos consecutivos.
+Están desactivados por defecto y no generan consultas adicionales a la API.
+La antigüedad se calcula a partir de la fecha proporcionada por MeteoGalicia,
+no de la fecha de descarga; si no hay una fecha válida, el estado es desconocido.
+Los diagnósticos siguen disponibles durante un fallo de conexión.

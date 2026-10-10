@@ -1,9 +1,74 @@
 """Pure helpers for selecting and formatting tide data."""
 
-from datetime import datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from . import const
+
+TIDE_TIME_ZONE = ZoneInfo("Europe/Madrid")
+
+
+def with_forecast_dates(data):
+    """Attach fixed calendar dates, including the library's 0.1.7 contract."""
+    result = dict(data)
+    if "todayDate" in result:
+        day = date.fromisoformat(result["todayDate"])
+    else:
+        # 0.1.7 labels date with yesterday's RSS item. Keep its actual day;
+        # never reinterpret cached data relative to the time of the next read.
+        raw_date = result.get("date")
+        if not isinstance(raw_date, str):
+            raise ValueError("Missing forecast date")
+        timestamp = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=TIDE_TIME_ZONE)
+        day = timestamp.astimezone(TIDE_TIME_ZONE).date() + timedelta(days=1)
+        result["todayDate"] = day.isoformat()
+        result["date"] = datetime.combine(
+            day, datetime.min.time(), tzinfo=TIDE_TIME_ZONE
+        ).isoformat()
+    result.setdefault("tomorrowDate", (day + timedelta(days=1)).isoformat())
+    if date.fromisoformat(result["tomorrowDate"]) != day + timedelta(days=1):
+        raise ValueError("Inconsistent forecast dates")
+    return result
+
+
+def tides_on_day(data, day):
+    """Return complete forecast lists for a specific calendar day."""
+    if data.get("todayDate") == day.isoformat():
+        return data.get("todayTides")
+    if data.get("tomorrowDate") == day.isoformat():
+        return data.get("tomorrowTides")
+    return None
+
+
+def upcoming_tides(data, now):
+    """Pair future tides with their original timezone-aware timestamps."""
+    candidates = []
+    tomorrow = data.get("tomorrowTides")
+    if tomorrow is None:
+        first = data.get("tomorrowFirstTide")
+        tomorrow = [first] if first else []
+    for field, tides in (
+        ("todayDate", data.get("todayTides") or []),
+        ("tomorrowDate", tomorrow),
+    ):
+        try:
+            day = date.fromisoformat(data[field])
+        except KeyError, TypeError, ValueError:
+            continue
+        for tide in tides:
+            try:
+                hour, minute = map(int, tide[const.HORA_FIELD].split(":"))
+                timestamp = datetime.combine(
+                    day, datetime.min.time(), tzinfo=TIDE_TIME_ZONE
+                ).replace(hour=hour, minute=minute)
+            except KeyError, TypeError, ValueError:
+                continue
+            if timestamp.astimezone(UTC) > now.astimezone(UTC):
+                candidates.append((tide, timestamp))
+    return sorted(candidates, key=lambda item: item[1].astimezone(UTC))
 
 
 def get_next_tide_with_day(
@@ -20,7 +85,7 @@ def get_next_tide_with_day(
             continue
         try:
             hour, minute = (int(value) for value in tide_time.split(":", 1))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             continue
         if (hour, minute) > (current.hour, current.minute):
             return tide, False
@@ -53,7 +118,7 @@ def get_state_from_tide(tide: dict[str, Any] | None) -> str | None:
 
     try:
         tide_type_int = int(tide_type)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
     if tide_type_int == 0:

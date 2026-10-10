@@ -7,12 +7,14 @@ from custom_components.meteogalicia_tides.coordinator import (
     MeteoGaliciaTidesCoordinator,
 )
 from custom_components.meteogalicia_tides.sensor import _create_entities
+from custom_components.meteogalicia_tides.tide import TIDE_TIME_ZONE
 
 from .test_coordinator_ha import VALID_RESPONSE
 
 
-def test_entity_identifiers_and_defaults_are_compatible(hass):
+def test_entity_identifiers_and_defaults_are_compatible(hass, freezer):
     """Keep the installed entity ID basis and opt-in structured sensors."""
+    freezer.move_to("2026-08-08T12:00:00Z")
     coordinator = MeteoGaliciaTidesCoordinator(hass, "1")
     coordinator.data = VALID_RESPONSE
 
@@ -65,12 +67,12 @@ def test_additional_tide_entities_expose_upcoming_forecast(hass):
     ):
         entities = _create_entities("1", coordinator)
         assert entities[4].native_value == datetime(
-            2026, 8, 8, 23, 59, tzinfo=UTC
+            2026, 8, 8, 23, 59, tzinfo=TIDE_TIME_ZONE
         )
         assert entities[5].native_value == datetime(
-            2026, 8, 9, 1, 0, tzinfo=UTC
+            2026, 8, 9, 1, 0, tzinfo=TIDE_TIME_ZONE
         )
         assert entities[6].native_value == datetime(
-            2026, 8, 9, 1, 0, tzinfo=UTC
+            2026, 8, 9, 1, 0, tzinfo=TIDE_TIME_ZONE
         )
         assert entities[7].native_value == 1

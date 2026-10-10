@@ -51,6 +51,14 @@ Antes de guardar la entrada se comprueba que MeteoGalicia responde y que los dat
 
 El intervalo predeterminado de las nuevas entradas es de 30 segundos. Puedes modificarlo desde **Ajustes → Dispositivos y servicios → MeteoGalicia Tides → Configurar**, entre 30 segundos y 24 horas.
 
+Para cambiar de puerto, abre el menú de la entrada y selecciona **Reconfigurar**.
+Se valida el nuevo puerto y se conserva el intervalo configurado. Cambiar de puerto
+sustituye las entidades y el dispositivo anteriores; revisa las automatizaciones
+que los utilicen. Seleccionar el mismo puerto conserva sus entidades.
+
+Las consultas reutilizan una sesión HTTP por puerto, que se cierra al descargar
+la entrada o si su configuración falla.
+
 La configuración mediante `configuration.yaml` sigue siendo compatible para las instalaciones existentes. Al iniciar Home Assistant, cada puerto configurado en YAML se importará automáticamente a **Dispositivos y servicios**, conservando el mismo identificador único de la entidad. Home Assistant mostrará una reparación para recordar que ya puedes retirar ese bloque YAML.
 
 Si quieres añadir la información para un puerto dado:
@@ -97,6 +105,11 @@ Si aparece el mensaje *MeteoGalicia request timed out*, el servicio no respondi�
 Los mensajes *returned no data* e *invalid response* diferencian una respuesta vacía de una respuesta que no contiene ninguna marea utilizable.
 
 ## Publicación de versiones
+
+Antes de publicar, aumenta `version` en el manifiesto si cambia la integración.
+Las comprobaciones del PR y de publicación validan la versión, la disponibilidad
+en PyPI de la dependencia fijada y el contenido del ZIP para HACS. La API se
+mantiene en `0.1.8` hasta que se publique su siguiente versión.
 
 HACS descarga `homeassistant-meteogalicia_tides.zip` desde los assets de cada release.
 Los archivos automáticos «Source code» de GitHub no sustituyen ese ZIP.

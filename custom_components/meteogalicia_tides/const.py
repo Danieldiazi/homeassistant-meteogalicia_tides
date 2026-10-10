@@ -5,6 +5,7 @@ from datetime import timedelta
 DOMAIN = "meteogalicia_tides"
 INTEGRATION_NAME = "MeteoGalicia_Tides"
 CONF_ID_PORT = "id_port"
+CONF_RESET_ENTITIES = "_reset_entities"
 CONF_SCAN_INTERVAL = "scan_interval"
 PLATFORMS = ["sensor"]
 TIMEOUT = 60

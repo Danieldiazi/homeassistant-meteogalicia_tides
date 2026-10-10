@@ -1,6 +1,11 @@
 {
   "config": {
     "step": {
+      "reconfigure": {
+        "title": "Cambiar el puerto de mareas",
+        "description": "Selecciona el nuevo puerto. Cambiar de puerto sustituye las entidades y el dispositivo anteriores. Revisa las automatizaciones que los utilicen. Se conserva el intervalo de actualización.",
+        "data": {"id_port": "Puerto"}
+      },
       "user": {
         "title": "Añadir un puerto de mareas de MeteoGalicia",
         "description": "Selecciona un puerto del servicio oficial de mareas de MeteoGalicia.",
@@ -16,6 +21,7 @@
       "unknown": "Error inesperado"
     },
     "abort": {
+      "reconfigure_successful": "Se ha actualizado el puerto de mareas",
       "already_configured": "Este puerto ya está configurado"
     }
   },

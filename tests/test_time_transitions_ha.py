@@ -48,7 +48,7 @@ async def test_tide_boundary_updates_published_state_without_poll(hass, freezer)
     entry.add_to_hass(hass)
     with patch(
         "custom_components.meteogalicia_tides.coordinator."
-        "_get_forecast_tide_data_from_api",
+        "MeteoGalicia.get_forecast_tide",
         return_value=VALID_RESPONSE,
     ) as fetch:
         assert await hass.config_entries.async_setup(entry.entry_id)

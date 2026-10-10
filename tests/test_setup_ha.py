@@ -13,8 +13,9 @@ from custom_components.meteogalicia_tides.sensor import async_setup_platform
 from .test_coordinator_ha import VALID_RESPONSE
 
 
-async def test_full_entry_setup_entities_and_unload(hass):
+async def test_full_entry_setup_entities_and_unload(hass, freezer):
     """Set up, expose, and unload a real integration entry."""
+    freezer.move_to("2026-08-08T12:00:00Z")
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_ID_PORT: "1"})
     entry.add_to_hass(hass)
 

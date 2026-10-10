@@ -12,6 +12,8 @@ from custom_components.meteogalicia_tides.coordinator import (
 VALID_RESPONSE = {
     "pointGeoRSS": "43.36 -8.40",
     "date": "2026-08-08T00:00:00Z",
+    "todayDate": "2026-08-08",
+    "tomorrowDate": "2026-08-09",
     "portId": "1",
     "portName": "A Coruña",
     "todayTides": [

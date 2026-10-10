@@ -1,17 +1,22 @@
 """Coordinator for the MeteoGalicia_Tides integration."""
+
 import asyncio
 import logging
 from collections.abc import Mapping
-from datetime import timedelta
+from datetime import datetime, timedelta
 from time import monotonic
 
+from homeassistant.core import callback
+from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 from meteogalicia_api.interface import MeteoGalicia
 
 from . import const
+from .tide import TIDE_TIME_ZONE, upcoming_tides, with_forecast_dates
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
     """Class to manage fetching MeteoGalicia tide data."""
@@ -32,6 +37,75 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.last_success = None
         self.last_request_duration = None
         self.last_failure_reason = None
+        self._unsub_transition = None
+        self._transition_listeners = 0
+
+    @callback
+    def async_add_listener(self, update_callback, context=None):
+        """Share one local transition timer across all port entities."""
+        remove = super().async_add_listener(update_callback, context)
+        self._transition_listeners += 1
+        self._schedule_transition(self.data)
+        removed = False
+
+        @callback
+        def remove_listener():
+            nonlocal removed
+            if removed:
+                return
+            removed = True
+            remove()
+            self._transition_listeners -= 1
+            if not self._transition_listeners:
+                self._cancel_transition()
+
+        return remove_listener
+
+    @callback
+    def _cancel_transition(self):
+        if self._unsub_transition is not None:
+            self._unsub_transition()
+            self._unsub_transition = None
+
+    @callback
+    def _schedule_transition(self, data):
+        self._cancel_transition()
+        if not self._transition_listeners or not data:
+            return
+        now = dt_util.now(TIDE_TIME_ZONE)
+        midnight = datetime.combine(
+            now.date() + timedelta(days=1),
+            datetime.min.time(),
+            tzinfo=TIDE_TIME_ZONE,
+        )
+        candidates = upcoming_tides(data, now)
+        transition = min(midnight, candidates[0][1]) if candidates else midnight
+        if data["todayDate"] < now.date().isoformat() or not candidates:
+            # The published client may still return yesterday's window around
+            # local midnight on a UTC host. Retry until a fresh window arrives,
+            # even when the configured network interval is a whole day.
+            transition = min(transition, now + timedelta(minutes=15))
+        self._unsub_transition = async_track_point_in_time(
+            self.hass, self._async_time_transition, transition
+        )
+
+    @callback
+    def _async_time_transition(self, _now):
+        """Publish time-based changes without resetting the polling cadence."""
+        self._unsub_transition = None
+        self.async_update_listeners()
+        self._schedule_transition(self.data)
+        now = dt_util.now(TIDE_TIME_ZONE)
+        if self.data and (
+            self.data["todayDate"] < now.date().isoformat()
+            or not upcoming_tides(self.data, now)
+        ):
+            self.hass.async_create_task(self.async_request_refresh())
+
+    async def async_shutdown(self):
+        """Cancel local timers together with the normal coordinator shutdown."""
+        self._cancel_transition()
+        await super().async_shutdown()
 
     async def _async_update_data(self):
         """Fetch data from the MeteoGalicia API."""
@@ -43,9 +117,7 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
                     _get_forecast_tide_data_from_api, self.id_port
                 )
         except TimeoutError as err:
-            message = (
-                f"MeteoGalicia request timed out after {const.TIMEOUT} seconds"
-            )
+            message = f"MeteoGalicia request timed out after {const.TIMEOUT} seconds"
             self._record_failure(message, started)
             raise UpdateFailed(message) from err
         except Exception as err:
@@ -61,7 +133,14 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
             message = "MeteoGalicia API returned an invalid response"
             self._record_failure(message, started)
             raise UpdateFailed(message)
+        try:
+            response = with_forecast_dates(response)
+        except (KeyError, TypeError, ValueError) as err:
+            message = "MeteoGalicia API returned an invalid forecast date"
+            self._record_failure(message, started)
+            raise UpdateFailed(message) from err
         self._record_success(started)
+        self._schedule_transition(response)
         return response
 
     def _record_success(self, started):
@@ -77,9 +156,7 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.last_request_duration = monotonic() - started
         self.last_failure_reason = reason
         self.consecutive_failures += 1
-        multiplier = min(
-            2**self.consecutive_failures, const.MAX_BACKOFF_MULTIPLIER
-        )
+        multiplier = min(2**self.consecutive_failures, const.MAX_BACKOFF_MULTIPLIER)
         self.update_interval = timedelta(
             seconds=min(
                 self.configured_update_interval.total_seconds() * multiplier,
@@ -103,11 +180,14 @@ def _is_valid_response(response):
     tomorrow_first_tide = response.get("tomorrowFirstTide")
     if not isinstance(today_tides, list):
         return False
-    if tomorrow_first_tide is not None and not isinstance(
-        tomorrow_first_tide, Mapping
-    ):
+    if tomorrow_first_tide is not None and not isinstance(tomorrow_first_tide, Mapping):
         return False
     tides = [*today_tides]
+    if "tomorrowTides" in response:
+        tomorrow_tides = response["tomorrowTides"]
+        if not isinstance(tomorrow_tides, list):
+            return False
+        tides.extend(tomorrow_tides)
     if tomorrow_first_tide is not None:
         tides.append(tomorrow_first_tide)
     return bool(tides) and all(_is_valid_tide(tide) for tide in tides)
@@ -123,6 +203,6 @@ def _is_valid_tide(tide):
     try:
         hour, minute = (int(value) for value in tide_time.split(":", 1))
         int(tide[const.ID_TIPO_MAREA_FIELD])
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         return False
     return 0 <= hour <= 23 and 0 <= minute <= 59

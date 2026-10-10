@@ -8,6 +8,7 @@ from threading import Lock
 from time import monotonic
 
 import requests
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -45,6 +46,13 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self._client = MeteoGalicia(session=self._session, timeout=const.TIMEOUT)
         self._session_lock = Lock()
         self._closed = False
+        self._unsub_session_shutdown = hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP, self._async_stop
+        )
+
+    async def _async_stop(self, _event):
+        self._unsub_session_shutdown = None
+        await self.async_shutdown()
 
     @callback
     def async_add_listener(self, update_callback, context=None):
@@ -76,7 +84,7 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
     @callback
     def _schedule_transition(self, data):
         self._cancel_transition()
-        if not self._transition_listeners or not data:
+        if self._closed or not self._transition_listeners or not data:
             return
         now = dt_util.now(TIDE_TIME_ZONE)
         midnight = datetime.combine(
@@ -99,6 +107,8 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
     def _async_time_transition(self, _now):
         """Publish time-based changes without resetting the polling cadence."""
         self._unsub_transition = None
+        if self._closed:
+            return
         self.async_update_listeners()
         self._schedule_transition(self.data)
         now = dt_util.now(TIDE_TIME_ZONE)
@@ -113,6 +123,9 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         if self._closed:
             return
         self._closed = True
+        if self._unsub_session_shutdown is not None:
+            self._unsub_session_shutdown()
+            self._unsub_session_shutdown = None
         self._cancel_transition()
         await super().async_shutdown()
         await self.hass.async_add_executor_job(self._close_session)

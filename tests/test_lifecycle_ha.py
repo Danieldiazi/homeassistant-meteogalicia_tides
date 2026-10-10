@@ -5,6 +5,7 @@ from threading import Event
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.exceptions import ConfigEntryNotReady
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -66,6 +67,8 @@ async def test_shutdown_waits_for_running_request_before_closing_session(hass):
     ):
         api.return_value.get_forecast_tide.side_effect = request
         coordinator = MeteoGaliciaTidesCoordinator(hass, "3")
+        coordinator.async_set_updated_data(VALID_RESPONSE)
+        remove_listener = coordinator.async_add_listener(Mock())
         refresh = asyncio.create_task(coordinator._async_update_data())
         try:
             assert await asyncio.to_thread(started.wait, 5)
@@ -76,6 +79,8 @@ async def test_shutdown_waits_for_running_request_before_closing_session(hass):
             finish.set()
         await refresh
         await shutdown
+        assert coordinator._unsub_transition is None
+        remove_listener()
     session.close.assert_called_once_with()
 
 
@@ -96,6 +101,21 @@ async def test_failed_first_refresh_closes_session(hass):
         pytest.raises(ConfigEntryNotReady),
     ):
         await async_setup_entry(hass, entry)
+    session.close.assert_called_once_with()
+
+
+async def test_home_assistant_stop_closes_session(hass):
+    session = Mock()
+    with patch(
+        "custom_components.meteogalicia_tides.coordinator.requests.Session",
+        return_value=session,
+    ):
+        coordinator = MeteoGaliciaTidesCoordinator(hass, "3")
+        hass.bus.async_fire(EVENT_HOMEASSISTANT_STOP)
+        await hass.async_block_till_done()
+    session.close.assert_called_once_with()
+    assert coordinator._closed
+    await coordinator.async_shutdown()
     session.close.assert_called_once_with()
 
 

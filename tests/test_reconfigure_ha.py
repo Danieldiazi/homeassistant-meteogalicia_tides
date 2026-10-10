@@ -131,8 +131,8 @@ async def test_changing_port_replaces_only_that_entries_entities_and_device(
         new=AsyncMock(return_value=VALID_RESPONSE),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
-        assert await hass.config_entries.async_setup(other.entry_id)
         await hass.async_block_till_done()
+        assert other.state is config_entries.ConfigEntryState.LOADED
         old_ids = {
             entity.unique_id
             for entity in er.async_entries_for_config_entry(entities, entry.entry_id)

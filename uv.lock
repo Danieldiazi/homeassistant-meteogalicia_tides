@@ -1356,9 +1356,9 @@ dependencies = [
     { name = "tzdata" },
     { name = "xmltodict" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/85/6d/e6a8ac8f14021b48d3a8733d25495f52a9ef88d224371571a20394f7d7e4/meteogalicia_api-0.1.9.tar.gz", hash = "sha256:c5324734a1b49621f26bb58946393acaa2bf0c063bc91e71422a1434a8db78d2", size = 31322, upload-time = "2026-10-10T12:47:58.100727Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/6d/e6a8ac8f14021b48d3a8733d25495f52a9ef88d224371571a20394f7d7e4/meteogalicia_api-0.1.9.tar.gz", hash = "sha256:c5324734a1b49621f26bb58946393acaa2bf0c063bc91e71422a1434a8db78d2", size = 31322, upload-time = "2026-10-10T12:47:58.1Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/5b/16803e6e1adbdc611eee7666bf9e01333596134d3dafd00f77a0538918fe/meteogalicia_api-0.1.9-py3-none-any.whl", hash = "sha256:fa2f628c2003e7288f556cb7b2296577c4f7000d426bd5e81f377fa2cb8d39ed", size = 24303, upload-time = "2026-10-10T12:47:56.768258Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/5b/16803e6e1adbdc611eee7666bf9e01333596134d3dafd00f77a0538918fe/meteogalicia_api-0.1.9-py3-none-any.whl", hash = "sha256:fa2f628c2003e7288f556cb7b2296577c4f7000d426bd5e81f377fa2cb8d39ed", size = 24303, upload-time = "2026-10-10T12:47:56.768Z" },
 ]
 
 [[package]]

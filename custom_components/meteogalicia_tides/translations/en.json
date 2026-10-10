@@ -1,6 +1,11 @@
 {
   "config": {
     "step": {
+      "reconfigure": {
+        "title": "Change tide port",
+        "description": "Select the new port. Changing ports replaces the previous entities and device. Review automations that use them. The update interval is preserved.",
+        "data": {"id_port": "Port"}
+      },
       "user": {
         "title": "Add a MeteoGalicia tide port",
         "description": "Select a port from the official MeteoGalicia tide service.",
@@ -16,6 +21,7 @@
       "unknown": "Unexpected error"
     },
     "abort": {
+      "reconfigure_successful": "The tide port has been updated",
       "already_configured": "This port is already configured"
     }
   },

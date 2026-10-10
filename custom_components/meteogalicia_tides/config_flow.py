@@ -13,6 +13,7 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_ID_PORT,
+    CONF_RESET_ENTITIES,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -39,8 +40,7 @@ PORT_SCHEMA = vol.Schema(
         vol.Required(CONF_ID_PORT): SelectSelector(
             SelectSelectorConfig(
                 options=[
-                    {"label": name, "value": id_port}
-                    for id_port, name in PORTS.items()
+                    {"label": name, "value": id_port} for id_port, name in PORTS.items()
                 ]
             )
         )
@@ -70,20 +70,8 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(id_port)
                 self._abort_if_unique_id_configured()
-                try:
-                    async with asyncio.timeout(TIMEOUT):
-                        response = await self.hass.async_add_executor_job(
-                            _get_forecast_tide_data_from_api, id_port
-                        )
-                except (TimeoutError, OSError):
-                    errors["base"] = "cannot_connect"
-                except Exception:  # noqa: BLE001
-                    errors["base"] = "unknown"
-                else:
-                    if not _is_valid_response(response):
-                        errors["base"] = "invalid_response"
-                    else:
-                        return await self._async_create_port_entry(id_port)
+                if await self._async_validate_port(id_port, errors):
+                    return await self._async_create_port_entry(id_port)
 
         return self.async_show_form(
             step_id="user",
@@ -91,9 +79,60 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_import(
-        self, import_data: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def _async_validate_port(self, id_port, errors):
+        """Use the same connection and response checks for setup and reconfiguration."""
+        try:
+            async with asyncio.timeout(TIMEOUT):
+                response = await self.hass.async_add_executor_job(
+                    _get_forecast_tide_data_from_api, id_port
+                )
+        except TimeoutError, OSError:
+            errors["base"] = "cannot_connect"
+        except Exception:  # noqa: BLE001
+            errors["base"] = "unknown"
+        else:
+            if _is_valid_response(response):
+                return True
+            errors["base"] = "invalid_response"
+        return False
+
+    async def async_step_reconfigure(self, user_input=None):
+        """Change a port in place, preserving this entry's polling options."""
+        entry = self._get_reconfigure_entry()
+        errors = {}
+        if user_input is not None:
+            id_port = str(user_input[CONF_ID_PORT]).strip()
+            if id_port not in PORTS:
+                errors[CONF_ID_PORT] = "invalid_port"
+            elif any(
+                other.entry_id != entry.entry_id
+                and (
+                    other.unique_id == id_port
+                    or str(other.data.get(CONF_ID_PORT)) == id_port
+                )
+                for other in self._async_current_entries()
+            ):
+                return self.async_abort(reason="already_configured")
+            elif await self._async_validate_port(id_port, errors):
+                data = {**entry.data, CONF_ID_PORT: id_port}
+                if id_port != str(entry.data[CONF_ID_PORT]):
+                    data[CONF_RESET_ENTITIES] = True
+                await self.async_set_unique_id(id_port)
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=id_port,
+                    title=port_name(id_port),
+                    data=data,
+                )
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                PORT_SCHEMA, {CONF_ID_PORT: str(entry.data[CONF_ID_PORT])}
+            ),
+            errors=errors,
+        )
+
+    async def async_step_import(self, import_data: dict[str, Any]) -> dict[str, Any]:
         """Import a port from legacy YAML configuration."""
         id_port = str(import_data[CONF_ID_PORT]).strip()
         if id_port.isdecimal():
@@ -122,7 +161,7 @@ class MeteoGaliciaTidesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlow):
+class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlowWithReload):
     """Handle MeteoGalicia Tides options."""
 
     async def async_step_init(
@@ -133,7 +172,7 @@ class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             try:
                 interval = int(user_input[CONF_SCAN_INTERVAL])
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 errors["base"] = "invalid_interval"
             else:
                 if MIN_SCAN_INTERVAL <= interval <= MAX_SCAN_INTERVAL:
@@ -144,9 +183,7 @@ class MeteoGaliciaTidesOptionsFlow(config_entries.OptionsFlow):
 
         current_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL,
-            self.config_entry.data.get(
-                CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-            ),
+            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         )
         return self.async_show_form(
             step_id="init",

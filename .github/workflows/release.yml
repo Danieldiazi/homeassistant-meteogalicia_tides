@@ -13,44 +13,21 @@ jobs:
   release:
     name: Publish HACS release
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Download repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Resolve and verify version
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Validate version, published API and HACS ZIP
         id: release
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          release_tag = os.environ["GITHUB_REF_NAME"].removeprefix("publish/")
-          manifest_path = Path("custom_components/meteogalicia_tides/manifest.json")
-          manifest_version = json.loads(manifest_path.read_text(encoding="utf-8"))["version"]
-
-          def normalized(version):
-              return tuple(
-                  int(part) if part.isdigit() else part
-                  for part in version.removeprefix("v").split(".")
-              )
-
-          if normalized(release_tag) != normalized(manifest_version):
-              raise SystemExit(
-                  f"Manifest version {manifest_version} does not match release {release_tag}"
-              )
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"tag={release_tag}\n")
-          PY
-
-      - name: Create HACS zip
-        run: |
-          cd custom_components/meteogalicia_tides
-          zip ../../homeassistant-meteogalicia_tides.zip -r ./
-
+        run: python scripts/release.py --domain meteogalicia_tides --output homeassistant-meteogalicia_tides.zip --verify-dependencies
       - name: Create GitHub release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ steps.release.outputs.tag }}
           target_commitish: ${{ github.sha }}

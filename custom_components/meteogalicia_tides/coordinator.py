@@ -4,8 +4,10 @@ import asyncio
 import logging
 from collections.abc import Mapping
 from datetime import datetime, timedelta
+from threading import Lock
 from time import monotonic
 
+import requests
 from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_point_in_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -39,6 +41,10 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.last_failure_reason = None
         self._unsub_transition = None
         self._transition_listeners = 0
+        self._session = requests.Session()
+        self._client = MeteoGalicia(session=self._session, timeout=const.TIMEOUT)
+        self._session_lock = Lock()
+        self._closed = False
 
     @callback
     def async_add_listener(self, update_callback, context=None):
@@ -103,9 +109,25 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
             self.hass.async_create_task(self.async_request_refresh())
 
     async def async_shutdown(self):
-        """Cancel local timers together with the normal coordinator shutdown."""
+        """Stop timers and close the session after any in-flight request finishes."""
+        if self._closed:
+            return
+        self._closed = True
         self._cancel_transition()
         await super().async_shutdown()
+        await self.hass.async_add_executor_job(self._close_session)
+
+    def _close_session(self):
+        with self._session_lock:
+            self._session.close()
+
+    def _get_forecast(self):
+        # A timed-out executor job can keep running. Serialize requests and
+        # closing so the requests.Session is never used by two threads at once.
+        with self._session_lock:
+            if self._closed:
+                raise RuntimeError("MeteoGalicia coordinator has been shut down")
+            return self._client.get_forecast_tide(self.id_port)
 
     async def _async_update_data(self):
         """Fetch data from the MeteoGalicia API."""
@@ -113,9 +135,7 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         started = monotonic()
         try:
             async with asyncio.timeout(const.TIMEOUT):
-                response = await self.hass.async_add_executor_job(
-                    _get_forecast_tide_data_from_api, self.id_port
-                )
+                response = await self.hass.async_add_executor_job(self._get_forecast)
         except TimeoutError as err:
             message = f"MeteoGalicia request timed out after {const.TIMEOUT} seconds"
             self._record_failure(message, started)
@@ -167,8 +187,10 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
 
 def _get_forecast_tide_data_from_api(id_port):
     """Call MeteoGalicia API to get tide forecast data."""
-    meteogalicia_api = MeteoGalicia()
-    return meteogalicia_api.get_forecast_tide(id_port)
+    with requests.Session() as session:
+        return MeteoGalicia(session=session, timeout=const.TIMEOUT).get_forecast_tide(
+            id_port
+        )
 
 
 def _is_valid_response(response):

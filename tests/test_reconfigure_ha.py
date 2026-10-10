@@ -155,8 +155,8 @@ async def test_changing_port_replaces_only_that_entries_entities_and_device(
             )
             await hass.async_block_till_done()
     assert result["reason"] == "reconfigure_successful"
-    assert not old_devices.intersection(devices.devices)
-    assert other_ids.issubset(entities.entities)
+    assert all(devices.async_get(device_id) is None for device_id in old_devices)
+    assert all(entities.async_get(entity_id) is not None for entity_id in other_ids)
     assert CONF_RESET_ENTITIES not in entry.data
     new_entities = er.async_entries_for_config_entry(entities, entry.entry_id)
     assert not old_ids.intersection(entity.unique_id for entity in new_entities)

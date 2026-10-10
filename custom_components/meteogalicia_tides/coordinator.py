@@ -176,12 +176,12 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(str(err)) from err
         except Exception as err:
             message = f"Unexpected MeteoGalicia API error: {err}"
-            self._record_failure(message, started)
+            self._record_failure(message, started, kind="unexpected")
             raise UpdateFailed(message) from err
 
         if response is None:
             message = "MeteoGalicia API returned no data"
-            self._record_failure(message, started)
+            self._record_failure(message, started, kind="no_data")
             raise UpdateFailed(message)
         if not _is_valid_response(response):
             message = "MeteoGalicia API returned an invalid response"
@@ -216,12 +216,12 @@ class MeteoGaliciaTidesCoordinator(DataUpdateCoordinator):
         self.consecutive_failures += 1
         multiplier = min(2**self.consecutive_failures, const.MAX_BACKOFF_MULTIPLIER)
         self.update_interval = timedelta(
-            seconds=min(
-                max(
+            seconds=max(
+                min(
                     self.configured_update_interval.total_seconds() * multiplier,
-                    retry_after or 0,
+                    const.MAX_SCAN_INTERVAL,
                 ),
-                const.MAX_SCAN_INTERVAL,
+                retry_after or 0,
             )
         )
 

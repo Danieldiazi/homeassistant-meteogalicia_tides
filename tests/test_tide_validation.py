@@ -46,18 +46,19 @@ def test_valid_heights_remain_supported(height):
     assert _is_valid_tide(tide)
 
 
-async def test_tide_rate_limit_respects_retry_after(hass):
+@pytest.mark.parametrize("retry_after", [3600, 172800])
+async def test_tide_rate_limit_respects_retry_after(hass, retry_after):
     coordinator = MeteoGaliciaTidesCoordinator(hass, "1")
     try:
         with patch.object(
             hass,
             "async_add_executor_job",
-            AsyncMock(side_effect=MeteoGaliciaHTTPError(429, retry_after=3600)),
+            AsyncMock(side_effect=MeteoGaliciaHTTPError(429, retry_after=retry_after)),
         ):
             with pytest.raises(UpdateFailed, match="429"):
                 await coordinator._async_update_data()
         assert coordinator.last_failure_kind == "http"
-        assert coordinator.update_interval.total_seconds() == 3600
+        assert coordinator.update_interval.total_seconds() == retry_after
     finally:
         await coordinator.async_shutdown()
 

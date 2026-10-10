@@ -96,7 +96,7 @@ No configures el mismo puerto simultáneamente mediante la interfaz y YAML.
 ## FAQ
 
 ###### La integración aparece como no disponible
-El coordinador marca las entidades como no disponibles cuando MeteoGalicia no responde, devuelve contenido vacío o proporciona una respuesta inválida. Tras fallos consecutivos reduce progresivamente la frecuencia de consulta, hasta un máximo de 24 horas, y recupera el intervalo configurado en cuanto obtiene una respuesta válida.
+El coordinador marca las entidades como no disponibles cuando MeteoGalicia no responde, devuelve contenido vacío o proporciona una respuesta inválida. Tras fallos consecutivos reduce progresivamente la frecuencia de consulta, hasta un máximo de 24 horas, y recupera el intervalo configurado en cuanto obtiene una respuesta válida. Si el servidor indica un tiempo de espera mayor, se respeta ese plazo.
 
 ###### TimeoutError
 Si aparece el mensaje *MeteoGalicia request timed out*, el servicio no respondió antes de 60 segundos. Revisa la conexión y espera al siguiente intento.

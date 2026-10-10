@@ -66,8 +66,9 @@ async def test_tide_boundary_updates_published_state_without_poll(hass, freezer)
         assert hass.states.get(state.entity_id).state == "Low tide at 01:00"
         assert fetch.call_count == 1
         assert entry.runtime_data.update_interval == timedelta(seconds=86400)
+        coordinator = entry.runtime_data
         assert await hass.config_entries.async_unload(entry.entry_id)
-        assert entry.runtime_data._unsub_transition is None
+        assert coordinator._unsub_transition is None
 
 
 async def test_midnight_refreshes_window_and_keeps_cached_dates(hass, freezer):

@@ -32,12 +32,12 @@ def test_entity_identifiers_and_defaults_are_compatible(hass, freezer):
     assert tide_time.entity_description.entity_registry_enabled_default is False
     assert tide_type.entity_description.entity_registry_enabled_default is False
     assert tide_height.entity_description.entity_registry_enabled_default is False
-    assert len(entities) == 8
+    assert len(entities) == 11
     assert all(
         entity.entity_description.entity_registry_enabled_default is False
         for entity in entities[1:]
     )
-    assert [entity.unique_id for entity in entities[4:]] == [
+    assert [entity.unique_id for entity in entities[4:8]] == [
         "meteogalicia_tides_next_high_tide_id_1",
         "meteogalicia_tides_next_low_tide_id_1",
         "meteogalicia_tides_second_next_tide_id_1",
@@ -53,7 +53,8 @@ def test_entities_become_unavailable_with_coordinator(hass):
 
     coordinator.last_update_success = False
 
-    assert all(entity.available is False for entity in entities)
+    assert all(entity.available is False for entity in entities[:8])
+    assert all(entity.available for entity in entities[8:])
 
 
 def test_additional_tide_entities_expose_upcoming_forecast(hass):

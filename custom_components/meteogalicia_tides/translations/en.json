@@ -4,7 +4,9 @@
       "reconfigure": {
         "title": "Change tide port",
         "description": "Select the new port. Changing ports replaces the previous entities and device. Review automations that use them. The update interval is preserved.",
-        "data": {"id_port": "Port"}
+        "data": {
+          "id_port": "Port"
+        }
       },
       "user": {
         "title": "Add a MeteoGalicia tide port",
@@ -26,7 +28,9 @@
     }
   },
   "options": {
-    "error": {"invalid_interval": "Enter a value between 30 and 86400 seconds"},
+    "error": {
+      "invalid_interval": "Enter a value between 30 and 86400 seconds"
+    },
     "step": {
       "init": {
         "title": "Update interval",
@@ -39,13 +43,40 @@
   },
   "entity": {
     "sensor": {
-      "next_tide_time": {"name": "Next tide"},
-      "next_tide_type": {"name": "Next tide type", "state": {"high": "High tide", "low": "Low tide"}},
-      "next_tide_height": {"name": "Next tide height"},
-      "next_high_tide": {"name": "Next high tide"},
-      "next_low_tide": {"name": "Next low tide"},
-      "second_next_tide": {"name": "Following tide"},
-      "today_tide_count": {"name": "Today's tide count"}
+      "next_tide_time": {
+        "name": "Next tide"
+      },
+      "next_tide_type": {
+        "name": "Next tide type",
+        "state": {
+          "high": "High tide",
+          "low": "Low tide"
+        }
+      },
+      "next_tide_height": {
+        "name": "Next tide height"
+      },
+      "next_high_tide": {
+        "name": "Next high tide"
+      },
+      "next_low_tide": {
+        "name": "Next low tide"
+      },
+      "second_next_tide": {
+        "name": "Following tide"
+      },
+      "today_tide_count": {
+        "name": "Today's tide count"
+      },
+      "health_last_success": {
+        "name": "Last successful connection"
+      },
+      "health_data_age": {
+        "name": "Data age"
+      },
+      "health_failures": {
+        "name": "Consecutive failures"
+      }
     }
   },
   "issues": {

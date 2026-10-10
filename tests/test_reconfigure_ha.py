@@ -161,4 +161,12 @@ async def test_changing_port_replaces_only_that_entries_entities_and_device(
     new_entities = er.async_entries_for_config_entry(entities, entry.entry_id)
     assert not old_ids.intersection(entity.unique_id for entity in new_entities)
     assert len(new_entities) == len(old_ids)
-    assert all(entity.unique_id.endswith("_id_3") for entity in new_entities)
+    health_ids = {
+        f"{DOMAIN}_3_{key}"
+        for key in ("health_last_success", "health_data_age", "health_failures")
+    }
+    assert {
+        entity.unique_id
+        for entity in new_entities
+        if not entity.unique_id.endswith("_id_3")
+    } == health_ids

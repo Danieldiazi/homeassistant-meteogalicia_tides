@@ -94,7 +94,9 @@ async def test_midnight_refreshes_window_and_keeps_cached_dates(hass, freezer):
         )
         assert entities[7].native_value == 2
         freezer.move_to("2026-08-10T12:00:00Z")
-        assert all(entity.native_value is None for entity in entities)
+        assert all(entity.native_value is None for entity in entities[:8])
+        assert entities[9].native_value > 0
+        assert entities[10].native_value == 0
     remove()
     remove()
     assert coordinator._unsub_transition is None

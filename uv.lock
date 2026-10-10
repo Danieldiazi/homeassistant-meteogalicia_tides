@@ -1114,7 +1114,7 @@ test = [
 
 [package.metadata.requires-dev]
 test = [
-    { name = "meteogalicia-api", specifier = "==0.1.8" },
+    { name = "meteogalicia-api", specifier = "==0.1.9" },
     { name = "pycares", specifier = "==5.0.1" },
     { name = "pytest-homeassistant-custom-component", specifier = "==0.13.368" },
     { name = "ruff", specifier = "==0.16.10" },
@@ -1349,16 +1349,16 @@ wheels = [
 
 [[package]]
 name = "meteogalicia-api"
-version = "0.1.8"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "tzdata" },
     { name = "xmltodict" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/aa/900b3f97d08a14929f853128b9a64e4057cabd3e66e96feceb1b56397dfc/meteogalicia_api-0.1.8.tar.gz", hash = "sha256:2f0fcb01ba20c142933a420a0ebe2c4b9d7f526d3a473d90b50fb07aa1940971", size = 31530, upload-time = "2026-10-10T07:42:47.262Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/6d/e6a8ac8f14021b48d3a8733d25495f52a9ef88d224371571a20394f7d7e4/meteogalicia_api-0.1.9.tar.gz", hash = "sha256:c5324734a1b49621f26bb58946393acaa2bf0c063bc91e71422a1434a8db78d2", size = 31322, upload-time = "2026-10-10T12:47:58.100727Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/73/55936a22f99a54052a2c1f23d6a55d99d19e6626ed0b1b13a30adb01603a/meteogalicia_api-0.1.8-py3-none-any.whl", hash = "sha256:2cd2e77d9cf0fa23d2a23f6ee9782d22b155f2b603b6df2cb8a94d2e25937cf0", size = 24344, upload-time = "2026-10-10T07:42:45.613Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/5b/16803e6e1adbdc611eee7666bf9e01333596134d3dafd00f77a0538918fe/meteogalicia_api-0.1.9-py3-none-any.whl", hash = "sha256:fa2f628c2003e7288f556cb7b2296577c4f7000d426bd5e81f377fa2cb8d39ed", size = 24303, upload-time = "2026-10-10T12:47:56.768258Z" },
 ]
 
 [[package]]

@@ -108,8 +108,8 @@ Los mensajes *returned no data* e *invalid response* diferencian una respuesta v
 
 Antes de publicar, aumenta `version` en el manifiesto si cambia la integración.
 Las comprobaciones del PR y de publicación validan la versión, la disponibilidad
-en PyPI de la dependencia fijada y el contenido del ZIP para HACS. La API se
-mantiene en `0.1.8` hasta que se publique su siguiente versión.
+en PyPI de la dependencia fijada y el contenido del ZIP para HACS. Las dos
+integraciones utilizan la API `0.1.9`, ya publicada y comprobada en sus pruebas.
 
 HACS descarga `homeassistant-meteogalicia_tides.zip` desde los assets de cada release.
 Los archivos automáticos «Source code» de GitHub no sustituyen ese ZIP.

@@ -1,4 +1,4 @@
-homeassistant==2026.10.1
+homeassistant==2026.10.0
 MeteoGalicia-API==0.1.10
 pytest-asyncio==1.4.0
 pytest-cov==7.1.0
